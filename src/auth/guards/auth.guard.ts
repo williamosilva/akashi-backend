@@ -37,29 +37,44 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     const providedSecret = request.headers['x-secret-key'];
     const expectedSecret = this.configService.get<string>('SECRET_KEY');
-    if (!providedSecret || providedSecret !== expectedSecret) {
-      throw new UnauthorizedException('Invalid secret key');
+    if (!providedSecret) {
+      throw new UnauthorizedException('Secret key is missing in headers');
+    }
+    if (providedSecret !== expectedSecret) {
+      throw new UnauthorizedException('Provided secret key is invalid');
     }
 
     try {
       const accessToken = this.extractToken(request, 'Authorization');
-      if (accessToken) {
-        const payload = await this.jwtService.verifyAsync(accessToken, {
-          secret: this.configService.get<string>('JWT_SECRET'),
-        });
-        request.user = payload;
-        return true;
+      if (!accessToken) {
+        throw new UnauthorizedException(
+          'Access token is missing in Authorization header',
+        );
       }
+
+      const payload = await this.jwtService.verifyAsync(accessToken, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+      request.user = payload;
+      return true;
     } catch (error) {
       try {
         const refreshToken = this.extractToken(request, 'Refresh-Token');
         if (!refreshToken) {
-          throw new UnauthorizedException('No valid tokens provided');
+          throw new UnauthorizedException(
+            'Both access token and refresh token are missing or invalid',
+          );
         }
 
-        const payload = await this.jwtService.verifyAsync(refreshToken, {
-          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        });
+        const payload = await this.jwtService
+          .verifyAsync(refreshToken, {
+            secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          })
+          .catch(() => {
+            throw new UnauthorizedException(
+              'Refresh token is expired or invalid',
+            );
+          });
 
         const tokens = await this.authService.refreshTokens(
           payload.sub,
@@ -72,7 +87,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         request.user = payload;
         return true;
       } catch (refreshError) {
-        throw new UnauthorizedException('Invalid tokens');
+        if (refreshError instanceof UnauthorizedException) {
+          throw refreshError;
+        }
+        throw new UnauthorizedException(
+          'Failed to refresh tokens: ' + refreshError.message,
+        );
       }
     }
 
@@ -81,10 +101,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   private extractToken(request: any, headerName: string): string | null {
     const token = request.headers[headerName.toLowerCase()];
-    if (!token) return null;
+    if (!token) {
+      return null;
+    }
 
     const parts = token.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      throw new UnauthorizedException(
+        `Invalid ${headerName} format. Use: 'Bearer <token>'`,
+      );
+    }
 
     return parts[1];
   }
