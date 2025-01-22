@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthModule } from './auth/auth.module';
-import { validate } from './config/env.validation';
 import { APP_GUARD } from '@nestjs/core';
+import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/auth.guard';
+import { validate } from './config/env.validation';
 
 @Module({
   imports: [

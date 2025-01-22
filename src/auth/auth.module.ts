@@ -1,7 +1,6 @@
-// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
@@ -14,6 +13,7 @@ import { JwtAuthGuard } from './guards/auth.guard';
   imports: [
     PassportModule,
     JwtModule.registerAsync({
+      global: true,
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
@@ -27,6 +27,6 @@ import { JwtAuthGuard } from './guards/auth.guard';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard],
-  exports: [AuthService, JwtService],
+  exports: [AuthService],
 })
 export class AuthModule {}
