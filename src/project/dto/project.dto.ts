@@ -22,3 +22,14 @@ export class CreateProjectDto {
   })
   dataInfo?: Record<string, any>;
 }
+
+export class UpdateProjectDto {
+  @ApiPropertyOptional({
+    example: {
+      cliente: 'Nova Empresa Y',
+      orcamento: 75000,
+    },
+    description: 'Informações atualizadas do projeto',
+  })
+  dataInfo?: Record<string, any>;
+}

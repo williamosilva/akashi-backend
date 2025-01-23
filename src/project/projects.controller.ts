@@ -1,7 +1,22 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  Param,
+  Delete,
+  Get,
+  Put,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto } from './dto/project.dto';
+import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 
 @ApiTags('Projects')
 @Controller('projects')
@@ -61,5 +76,94 @@ export class ProjectsController {
       throw new BadRequestException('User ID is required');
     }
     return this.projectsService.createProject(userId, projectData);
+  }
+  @Get(':projectId/datainfo')
+  @ApiOperation({ summary: 'Get project dataInfo by project ID' })
+  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
+  @ApiResponse({
+    status: 200,
+    description: 'Informações do projeto retornadas com sucesso',
+    schema: {
+      example: {
+        title: 'Projeto Atualizado',
+        subtitle: 'Detalhes do projeto',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ID de projeto inválido',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'ID de projeto inválido',
+      },
+    },
+  })
+  async getProjectDataInfo(@Param('projectId') projectId: string) {
+    return this.projectsService.getProjectDataInfo(projectId);
+  }
+
+  @Put(':projectId/datainfo')
+  @ApiOperation({ summary: 'Update project dataInfo' })
+  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
+  @ApiBody({
+    description: 'Dados para atualização do projeto',
+    type: UpdateProjectDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Informações do projeto atualizadas com sucesso',
+    schema: {
+      example: {
+        title: 'Projeto Atualizado',
+        subtitle: 'Novos detalhes do projeto',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ID de projeto inválido',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'ID de projeto inválido',
+      },
+    },
+  })
+  async updateProjectDataInfo(
+    @Param('projectId') projectId: string,
+    @Body() updateDataInfoDto: UpdateProjectDto,
+  ) {
+    return this.projectsService.updateProjectDataInfo(
+      projectId,
+      updateDataInfoDto,
+    );
+  }
+
+  @Delete(':projectId')
+  @ApiOperation({ summary: 'Delete project by ID' })
+  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
+  @ApiResponse({
+    status: 200,
+    description: 'Projeto excluído com sucesso',
+    schema: {
+      example: {
+        message: 'Projeto excluído com sucesso',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ID de projeto inválido',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'ID de projeto inválido',
+      },
+    },
+  })
+  async deleteProject(@Param('projectId') projectId: string) {
+    return this.projectsService.deleteProject(projectId);
   }
 }

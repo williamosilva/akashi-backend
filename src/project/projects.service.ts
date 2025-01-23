@@ -8,7 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project } from './schemas/project.schema';
 import { User } from '../auth/schemas/user.schema';
-import { CreateProjectDto } from './dto/project.dto';
+import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -46,5 +46,55 @@ export class ProjectsService {
       user: userObjectId,
     });
     return await newProject.save();
+  }
+  async getProjectDataInfo(projectId: string) {
+    if (!Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('ID de projeto inválido');
+    }
+
+    const project = await this.projectModel
+      .findById(projectId)
+      .select('dataInfo');
+
+    if (!project) {
+      throw new NotFoundException('Projeto não encontrado');
+    }
+
+    return project.dataInfo;
+  }
+
+  async updateProjectDataInfo(
+    projectId: string,
+    updateProjectDto: UpdateProjectDto,
+  ) {
+    if (!Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('ID de projeto inválido');
+    }
+
+    const updatedProject = await this.projectModel.findByIdAndUpdate(
+      projectId,
+      { $set: updateProjectDto },
+      { new: true, runValidators: true },
+    );
+
+    if (!updatedProject) {
+      throw new NotFoundException('Projeto não encontrado');
+    }
+
+    return updatedProject;
+  }
+
+  async deleteProject(projectId: string) {
+    if (!Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('ID de projeto inválido');
+    }
+
+    const deletedProject = await this.projectModel.findByIdAndDelete(projectId);
+
+    if (!deletedProject) {
+      throw new NotFoundException('Projeto não encontrado');
+    }
+
+    return { message: 'Projeto excluído com sucesso' };
   }
 }
