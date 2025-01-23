@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/auth.guard';
 import { validate } from './config/env.validation';
+import { ProjectsModule } from './project/projects.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { validate } from './config/env.validation';
       inject: [ConfigService],
     }),
     AuthModule,
+    ProjectsModule,
   ],
   providers: [
     {
