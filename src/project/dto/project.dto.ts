@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+interface ApiDataInfo {
+  uriApi: string;
+  ref?: string;
+  dataReturn?: any;
+}
+
 export class CreateProjectDto {
   @ApiProperty({
     example: 'Projeto de Marketing',
@@ -15,21 +21,21 @@ export class CreateProjectDto {
 
   @ApiPropertyOptional({
     example: {
-      cliente: 'Empresa X',
+      cliente: { uriApi: 'https://api.example.com/cliente', ref: 'data' },
       orcamento: 50000,
     },
     description: 'Informações adicionais do projeto',
   })
-  dataInfo?: Record<string, any>;
+  dataInfo?: Record<string, ApiDataInfo | any>;
 }
 
 export class UpdateProjectDto {
   @ApiPropertyOptional({
     example: {
-      cliente: 'Nova Empresa Y',
+      cliente: { uriApi: 'https://api.example.com/cliente', ref: 'data' },
       orcamento: 75000,
     },
     description: 'Informações atualizadas do projeto',
   })
-  dataInfo?: Record<string, any>;
+  dataInfo?: Record<string, ApiDataInfo | any>;
 }

@@ -9,6 +9,7 @@ import { Model, Types } from 'mongoose';
 import { Project } from './schemas/project.schema';
 import { User } from '../auth/schemas/user.schema';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
+import axios from 'axios';
 
 @Injectable()
 export class ProjectsService {
@@ -18,38 +19,54 @@ export class ProjectsService {
   ) {}
 
   async createProject(userId: string, createProjectDto: CreateProjectDto) {
-    // Validar se o userId é um ObjectId válido
     if (!Types.ObjectId.isValid(userId)) {
-      throw new BadRequestException('ID de usuário inválido');
+      throw new BadRequestException('Invalid user ID');
     }
 
-    // Converter userId para ObjectId
     const userObjectId = new Types.ObjectId(userId);
 
-    // Verificar se o usuário existe
     const userExists = await this.userModel.findById(userObjectId);
     if (!userExists) {
-      throw new NotFoundException('Usuário não encontrado');
+      throw new NotFoundException('User not found');
     }
 
-    // Verificar se já existe um projeto para este usuário
     const existingProject = await this.projectModel.findOne({
       user: userObjectId,
     });
     if (existingProject) {
-      throw new ConflictException('Usuário já possui um projeto cadastrado');
+      throw new ConflictException('User already has a registered project');
     }
 
-    // Criar novo projeto
+    if (createProjectDto.dataInfo) {
+      for (const [key, value] of Object.entries(createProjectDto.dataInfo)) {
+        if (typeof value === 'object' && value.uriApi && value.ref) {
+          try {
+            const apiResponse = await axios.get(value.uriApi);
+            createProjectDto.dataInfo[key] = {
+              ...value,
+              dataReturn: value.ref
+                ? apiResponse.data[value.ref]
+                : apiResponse.data,
+            };
+          } catch (error) {
+            throw new BadRequestException(
+              `Error fetching data from API in ${value.uriApi}`,
+            );
+          }
+        }
+      }
+    }
+
     const newProject = new this.projectModel({
       ...createProjectDto,
       user: userObjectId,
     });
     return await newProject.save();
   }
+
   async getProjectDataInfo(projectId: string) {
     if (!Types.ObjectId.isValid(projectId)) {
-      throw new BadRequestException('ID de projeto inválido');
+      throw new BadRequestException('Invalid project ID');
     }
 
     const project = await this.projectModel
@@ -57,7 +74,35 @@ export class ProjectsService {
       .select('dataInfo');
 
     if (!project) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Project not found');
+    }
+
+    if (project.dataInfo) {
+      for (const [key, value] of Object.entries(project.dataInfo)) {
+        if (typeof value === 'object' && value.uriApi && value.ref) {
+          try {
+            const apiResponse = await axios.get(value.uriApi);
+            const dataReturn = value.ref
+              ? apiResponse.data[value.ref]
+              : apiResponse.data;
+
+            if (dataReturn && dataReturn.id) {
+              delete dataReturn.id;
+            }
+
+            project.dataInfo[key] = {
+              ...value,
+              dataReturn: dataReturn,
+            };
+          } catch (error) {
+            throw new BadRequestException(
+              `Error fetching data from API in ${value.uriApi}`,
+            );
+          }
+        }
+      }
+
+      await project.save();
     }
 
     return project.dataInfo;
@@ -71,6 +116,27 @@ export class ProjectsService {
       throw new BadRequestException('ID de projeto inválido');
     }
 
+    // Lógica similar à criação para busca automática de API
+    if (updateProjectDto.dataInfo) {
+      for (const [key, value] of Object.entries(updateProjectDto.dataInfo)) {
+        if (typeof value === 'object' && value.uriApi && value.ref) {
+          try {
+            const apiResponse = await axios.get(value.uriApi);
+            updateProjectDto.dataInfo[key] = {
+              ...value,
+              dataReturn: value.ref
+                ? apiResponse.data[value.ref]
+                : apiResponse.data,
+            };
+          } catch (error) {
+            throw new BadRequestException(
+              `Error fetching data from API in ${value.uriApi}`,
+            );
+          }
+        }
+      }
+    }
+
     const updatedProject = await this.projectModel.findByIdAndUpdate(
       projectId,
       { $set: updateProjectDto },
@@ -78,7 +144,7 @@ export class ProjectsService {
     );
 
     if (!updatedProject) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Project not found');
     }
 
     return updatedProject;
@@ -86,15 +152,15 @@ export class ProjectsService {
 
   async deleteProject(projectId: string) {
     if (!Types.ObjectId.isValid(projectId)) {
-      throw new BadRequestException('ID de projeto inválido');
+      throw new BadRequestException('Invalid project ID');
     }
 
     const deletedProject = await this.projectModel.findByIdAndDelete(projectId);
 
     if (!deletedProject) {
-      throw new NotFoundException('Projeto não encontrado');
+      throw new NotFoundException('Project not found');
     }
 
-    return { message: 'Projeto excluído com sucesso' };
+    return { message: 'Project deleted successfully' };
   }
 }
