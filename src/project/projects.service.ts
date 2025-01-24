@@ -113,20 +113,26 @@ export class ProjectsService {
     updateProjectDto: UpdateProjectDto,
   ) {
     if (!Types.ObjectId.isValid(projectId)) {
-      throw new BadRequestException('ID de projeto inválido');
+      throw new BadRequestException('Invalid project ID');
     }
 
-    // Lógica similar à criação para busca automática de API
     if (updateProjectDto.dataInfo) {
       for (const [key, value] of Object.entries(updateProjectDto.dataInfo)) {
         if (typeof value === 'object' && value.uriApi && value.ref) {
           try {
             const apiResponse = await axios.get(value.uriApi);
+            const dataReturn = value.ref
+              ? apiResponse.data[value.ref]
+              : apiResponse.data;
+
+            // Remover id se existir
+            if (dataReturn && dataReturn.id) {
+              delete dataReturn.id;
+            }
+
             updateProjectDto.dataInfo[key] = {
               ...value,
-              dataReturn: value.ref
-                ? apiResponse.data[value.ref]
-                : apiResponse.data,
+              dataReturn: dataReturn,
             };
           } catch (error) {
             throw new BadRequestException(
@@ -137,6 +143,7 @@ export class ProjectsService {
       }
     }
 
+    // Atualização com { new: true } para retornar o objeto atualizado
     const updatedProject = await this.projectModel.findByIdAndUpdate(
       projectId,
       { $set: updateProjectDto },
