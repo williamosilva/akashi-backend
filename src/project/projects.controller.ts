@@ -79,24 +79,24 @@ export class ProjectsController {
   }
   @Get(':projectId/datainfo')
   @ApiOperation({ summary: 'Get project dataInfo by project ID' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
     status: 200,
-    description: 'Informações do projeto retornadas com sucesso',
+    description: 'Project information returned successfully',
     schema: {
       example: {
-        title: 'Projeto Atualizado',
-        subtitle: 'Detalhes do projeto',
+        title: 'Updated Project',
+        subtitle: 'Project Details',
       },
     },
   })
   @ApiResponse({
     status: 400,
-    description: 'ID de projeto inválido',
+    description: 'Invalid project ID',
     schema: {
       example: {
         statusCode: 400,
-        message: 'ID de projeto inválido',
+        message: 'Invalid project ID',
       },
     },
   })
@@ -106,28 +106,28 @@ export class ProjectsController {
 
   @Put(':projectId/datainfo')
   @ApiOperation({ summary: 'Update project dataInfo' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiBody({
-    description: 'Dados para atualização do projeto',
+    description: 'Data for project update',
     type: UpdateProjectDto,
   })
   @ApiResponse({
     status: 200,
-    description: 'Informações do projeto atualizadas com sucesso',
+    description: 'Project information updated successfully',
     schema: {
       example: {
-        title: 'Projeto Atualizado',
-        subtitle: 'Novos detalhes do projeto',
+        title: 'Updated Project',
+        subtitle: 'New project details',
       },
     },
   })
   @ApiResponse({
     status: 400,
-    description: 'ID de projeto inválido',
+    description: 'Invalid project ID',
     schema: {
       example: {
         statusCode: 400,
-        message: 'ID de projeto inválido',
+        message: 'Invalid project ID',
       },
     },
   })
@@ -143,23 +143,23 @@ export class ProjectsController {
 
   @Delete(':projectId')
   @ApiOperation({ summary: 'Delete project by ID' })
-  @ApiParam({ name: 'projectId', description: 'ID do projeto' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
     status: 200,
-    description: 'Projeto excluído com sucesso',
+    description: 'Project deleted successfully',
     schema: {
       example: {
-        message: 'Projeto excluído com sucesso',
+        message: 'Project deleted successfully',
       },
     },
   })
   @ApiResponse({
     status: 400,
-    description: 'ID de projeto inválido',
+    description: 'Invalid Project ID',
     schema: {
       example: {
         statusCode: 400,
-        message: 'ID de projeto inválido',
+        message: 'Invalid Project ID',
       },
     },
   })

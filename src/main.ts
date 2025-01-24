@@ -7,12 +7,28 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Akashi API')
-    .setDescription('The Akashi API description')
+    .setDescription(
+      'Welcome to the Akashi API documentation! This API is responsible for creating and managing objects used in producing content for websites. It was developed with **NestJS**, has unit tests and uses **MongoDB** as the database.',
+    )
     .setVersion('1.0')
-    .addTag('')
+    // .addServer('http://localhost:3000', 'Servidor Local')
+    // .addServer('https://api.akashi.com', 'Servidor de Produção')
+    .setContact(
+      'Desenvolvedor Akashi',
+      'https://www.williamsilva.dev',
+      'williamsilva20062005@gmail.com',
+    )
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      filter: true,
+      showRequestDuration: true,
+    },
+    customSiteTitle: 'Akashi API Docs',
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }
