@@ -130,26 +130,30 @@ export class ProjectsService {
 
     if (updateProjectDto.dataInfo) {
       for (const [key, value] of Object.entries(updateProjectDto.dataInfo)) {
-        if (typeof value === 'object' && value.uriApi && value.ref) {
+        if (typeof value === 'object' && value.uriApi) {
           try {
             const apiResponse = await axios.get(value.uriApi);
+
             const dataReturn = value.ref
               ? apiResponse.data[value.ref]
               : apiResponse.data;
 
-            // Remover id se existir
-            if (dataReturn && dataReturn.id) {
-              delete dataReturn.id;
-            }
-
             updateProjectDto.dataInfo[key] = {
               ...value,
-              dataReturn: dataReturn,
+              dataReturn:
+                dataReturn !== undefined
+                  ? dataReturn
+                  : `API responded successfully, but key "${value.ref}" was not found.`,
             };
           } catch (error) {
-            throw new BadRequestException(
-              `Error fetching data from API in ${value.uriApi}`,
+            console.error(
+              `Error fetching data from API (${value.uriApi}):`,
+              error.message,
             );
+            updateProjectDto.dataInfo[key] = {
+              ...value,
+              dataReturn: `Error fetching data: ${error.message}`,
+            };
           }
         }
       }
