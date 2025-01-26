@@ -39,19 +39,30 @@ export class ProjectsService {
 
     if (createProjectDto.dataInfo) {
       for (const [key, value] of Object.entries(createProjectDto.dataInfo)) {
-        if (typeof value === 'object' && value.uriApi && value.ref) {
+        if (typeof value === 'object' && value.uriApi) {
           try {
             const apiResponse = await axios.get(value.uriApi);
+
+            const dataReturn = value.ref
+              ? apiResponse.data[value.ref]
+              : apiResponse.data;
+
             createProjectDto.dataInfo[key] = {
               ...value,
-              dataReturn: value.ref
-                ? apiResponse.data[value.ref]
-                : apiResponse.data,
+              dataReturn:
+                dataReturn !== undefined
+                  ? dataReturn
+                  : `API responded successfully, but key "${value.ref}" was not found.`,
             };
           } catch (error) {
-            throw new BadRequestException(
-              `Error fetching data from API in ${value.uriApi}`,
+            console.error(
+              `Error fetching data from API (${value.uriApi}):`,
+              error.message,
             );
+            createProjectDto.dataInfo[key] = {
+              ...value,
+              dataReturn: `Error fetching data: ${error.message}`,
+            };
           }
         }
       }
@@ -61,6 +72,7 @@ export class ProjectsService {
       ...createProjectDto,
       user: userObjectId,
     });
+
     return await newProject.save();
   }
 
