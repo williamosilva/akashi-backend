@@ -141,6 +141,54 @@ export class ProjectsController {
     );
   }
 
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get project by User ID' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Project found successfully',
+    schema: {
+      example: {
+        _id: '60d5ecb54b3xxb2c001f3e123',
+        name: 'Project Name',
+        description: 'Project Description',
+        dataInfo: {
+          key1: {
+            uriApi: 'https://api.example.com/data',
+            ref: 'data',
+            dataReturn: 'API Response Data',
+          },
+        },
+        user: '60d5ecb54b3xxb2c001f3e124',
+        createdAt: '2023-01-01T00:00:00.000Z',
+        updatedAt: '2023-01-01T00:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid User ID',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Invalid user ID',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found or No project found for this user',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'No project found for this user',
+      },
+    },
+  })
+  async getProjectByUser(@Param('userId') userId: string) {
+    return this.projectsService.getProjectByUserId(userId);
+  }
+
   @Delete(':projectId')
   @ApiOperation({ summary: 'Delete project by ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })

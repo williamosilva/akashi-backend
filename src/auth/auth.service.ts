@@ -16,7 +16,20 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  private validateApiKey(providedSecret: string | undefined): void {
+    const expectedSecret = this.configService.get<string>('SECRET_KEY');
+
+    if (!providedSecret) {
+      throw new UnauthorizedException('Secret key is missing in headers');
+    }
+
+    if (providedSecret !== expectedSecret) {
+      throw new UnauthorizedException('Provided secret key is invalid');
+    }
+  }
+
+  async register(registerDto: RegisterDto, apiKey: string) {
+    this.validateApiKey(apiKey);
     const { email, password, fullName } = registerDto;
 
     const existingUser = await this.userModel.findOne({ email });
@@ -42,7 +55,8 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, apiKey: string) {
+    this.validateApiKey(apiKey);
     const { email, password } = loginDto;
 
     const user = await this.userModel.findOne({ email });

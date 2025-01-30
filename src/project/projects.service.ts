@@ -191,4 +191,25 @@ export class ProjectsService {
 
     return { message: 'Project deleted successfully' };
   }
+
+  async getProjectByUserId(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+
+    const userExists = await this.userModel.findById(userObjectId);
+    if (!userExists) {
+      throw new NotFoundException('User not found');
+    }
+
+    const project = await this.projectModel.findOne({ user: userObjectId });
+
+    if (!project) {
+      throw new NotFoundException('No project found for this user');
+    }
+
+    return project;
+  }
 }

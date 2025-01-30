@@ -1,5 +1,11 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Controller, Post, Body, Headers } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiHeader,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -13,6 +19,11 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register new user' })
+  @ApiHeader({
+    name: 'x-secret-key',
+    description: 'API Secret Key',
+    required: true,
+  })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
     status: 201,
@@ -27,7 +38,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Email already registered',
+    description: 'Email already registered or invalid API key',
     schema: {
       example: {
         statusCode: 401,
@@ -35,13 +46,21 @@ export class AuthController {
       },
     },
   })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Headers('x-secret-key') apiKey: string,
+  ) {
+    return this.authService.register(registerDto, apiKey);
   }
 
   @Public()
   @Post('login')
   @ApiOperation({ summary: 'User Login' })
+  @ApiHeader({
+    name: 'x-secret-key',
+    description: 'API Secret Key',
+    required: true,
+  })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
     status: 200,
@@ -56,7 +75,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Invalid credentials',
+    description: 'Invalid credentials or invalid API key',
     schema: {
       example: {
         statusCode: 401,
@@ -64,7 +83,10 @@ export class AuthController {
       },
     },
   })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Headers('x-secret-key') apiKey: string,
+  ) {
+    return this.authService.login(loginDto, apiKey);
   }
 }
