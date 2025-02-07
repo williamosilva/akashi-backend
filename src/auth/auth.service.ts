@@ -111,8 +111,8 @@ export class AuthService {
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
     try {
-      // Agora pegamos o email diretamente do profile
-      const email = profile.email; // Não mais profile.emails[0].value
+      // Fallback para um email gerado se nenhum email for encontrado
+      const email = profile.email || `${profile.id}@${provider}.social`;
 
       let user = await this.userModel.findOne({ email });
 
@@ -122,7 +122,7 @@ export class AuthService {
           fullName: profile.displayName,
           provider,
           providerId: profile.id,
-          photo: profile.photo, // Adicionando a foto do perfil também
+          photo: profile.photo,
         });
       } else if (user.provider !== provider) {
         user.provider = provider;

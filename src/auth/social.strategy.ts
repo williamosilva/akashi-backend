@@ -59,6 +59,35 @@ export class GitHubAuthStrategy extends PassportStrategy(
   }
 
   async validate(accessToken: string, refreshToken: string, profile: any) {
-    return profile;
+    const emails = profile.emails || [];
+
+    if (emails.length === 0 && accessToken) {
+      try {
+        const emailResponse = await fetch(
+          'https://api.github.com/user/emails',
+          {
+            headers: {
+              Authorization: `token ${accessToken}`,
+            },
+          },
+        );
+        const emailData = await emailResponse.json();
+        const primaryEmail = emailData.find((email) => email.primary)?.email;
+
+        if (primaryEmail) {
+          emails.push({ value: primaryEmail });
+        }
+      } catch (error) {
+        console.error('Failed to fetch GitHub email', error);
+      }
+    }
+
+    return {
+      id: profile.id,
+      email: emails.length > 0 ? emails[0].value : null,
+      displayName: profile.displayName || profile.username,
+      photo: profile.photos?.[0]?.value,
+      provider: 'github',
+    };
   }
 }
