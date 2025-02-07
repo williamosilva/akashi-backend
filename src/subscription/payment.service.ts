@@ -30,8 +30,8 @@ export class PaymentService {
         {
           price:
             planType === 'basic'
-              ? 'price_basic_mensalidade'
-              : 'price_premium_mensalidade', // Criar esses preços no Stripe
+              ? 'price_1QpwExImbnhk3VamaWR0zWB0'
+              : 'price_1QpwFvImbnhk3VamJnehrwNO',
           quantity: 1,
         },
       ],

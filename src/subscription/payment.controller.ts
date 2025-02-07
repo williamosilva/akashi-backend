@@ -20,7 +20,21 @@ export class PaymentController {
     @Body('planType') planType: 'basic' | 'premium',
     @Request() req,
   ) {
-    return this.paymentService.createCheckoutSession(req.user.email, planType);
+    try {
+      console.log('Usuário:', req.user);
+      console.log('Tipo de plano:', planType);
+
+      const session = await this.paymentService.createCheckoutSession(
+        req.user.email,
+        planType,
+      );
+
+      console.log('Sessão criada:', session);
+      return session;
+    } catch (error) {
+      console.error('Erro no checkout:', error);
+      throw error;
+    }
   }
 
   @Post('webhook')

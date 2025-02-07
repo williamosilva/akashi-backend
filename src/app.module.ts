@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/auth.guard';
 import { validate } from './config/env.validation';
 import { ProjectsModule } from './project/projects.module';
+import { PaymentModule } from './subscription/payment.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ProjectsModule } from './project/projects.module';
     }),
     AuthModule,
     ProjectsModule,
+    PaymentModule,
   ],
   providers: [
     {
