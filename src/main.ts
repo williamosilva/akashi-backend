@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Garante que as variáveis do .env sejam carregadas
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -11,8 +12,6 @@ async function bootstrap() {
       'Welcome to the Akashi API documentation! This API is responsible for creating and managing objects used in producing content for websites. It was developed with **NestJS**, has unit tests and uses **MongoDB** as the database.',
     )
     .setVersion('1.0')
-    // .addServer('http://localhost:3000', 'Servidor Local')
-    // .addServer('https://api.akashi.com', 'Servidor de Produção')
     .setContact(
       'Desenvolvedor Akashi',
       'https://www.williamsilva.dev',
@@ -30,6 +29,9 @@ async function bootstrap() {
     customSiteTitle: 'Akashi API Docs',
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000; // Define a porta
+  await app.listen(port);
+  console.log(`🚀 Server running on http://localhost:${port}`);
 }
+
 bootstrap();
