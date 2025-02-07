@@ -34,6 +34,8 @@
     "class-validator": "^0.14.1",
     "mongoose": "^8.9.5",
     "passport": "^0.7.0",
+    "passport-github2": "^0.1.12",
+    "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

@@ -64,7 +64,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password || '');
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -107,6 +107,45 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async handleSocialLogin(profile: any, provider: 'google' | 'github') {
+    try {
+      // Agora pegamos o email diretamente do profile
+      const email = profile.email; // Não mais profile.emails[0].value
+
+      let user = await this.userModel.findOne({ email });
+
+      if (!user) {
+        user = await this.userModel.create({
+          email,
+          fullName: profile.displayName,
+          provider,
+          providerId: profile.id,
+          photo: profile.photo, // Adicionando a foto do perfil também
+        });
+      } else if (user.provider !== provider) {
+        user.provider = provider;
+        user.providerId = profile.id;
+        if (profile.photo) {
+          user.photo = profile.photo;
+        }
+        await user.save();
+      }
+
+      const tokens = await this.generateTokens(user.id, user.email);
+
+      return {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        photo: user.photo,
+        ...tokens,
+      };
+    } catch (error) {
+      console.error('Error in handleSocialLogin:', error);
+      throw error;
+    }
   }
 
   async refreshTokens(userId: string, email: string) {

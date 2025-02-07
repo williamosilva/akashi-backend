@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Headers,
+  Get,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -10,11 +18,42 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './decorators/public.decorator';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+  @Public()
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Google Authentication' })
+  async googleAuth() {}
+  @Public()
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthCallback(@Req() req) {
+    try {
+      console.log('Google callback data:', req.user);
+      return await this.authService.handleSocialLogin(req.user, 'google');
+    } catch (error) {
+      console.error('Google callback error:', error);
+      throw error;
+    }
+  }
+  @Public()
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({ summary: 'GitHub Authentication' })
+  async githubAuth() {
+    // Inicia o fluxo de autenticação do GitHub
+  }
+  @Public()
+  @Get('github/callback')
+  @UseGuards(AuthGuard('github'))
+  async githubAuthCallback(@Req() req) {
+    return this.authService.handleSocialLogin(req.user, 'github');
+  }
 
   @Public()
   @Post('register')
