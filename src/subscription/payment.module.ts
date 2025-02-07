@@ -7,10 +7,12 @@ import {
 } from './schemas/subscription.schema';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    AuthModule,
     MongooseModule.forFeature([
       { name: Subscription.name, schema: SubscriptionSchema },
     ]),
