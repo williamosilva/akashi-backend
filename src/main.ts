@@ -18,10 +18,11 @@ async function bootstrap() {
   app.use(
     express.json({
       verify: (req: any, res, buf) => {
-        req.rawBody = buf;
+        req.rawBody = buf.toString();
       },
     }),
   );
+
   const config = new DocumentBuilder()
     .setTitle('Akashi API')
     .setDescription(

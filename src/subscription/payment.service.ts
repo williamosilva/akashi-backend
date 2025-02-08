@@ -30,8 +30,8 @@ export class PaymentService {
         {
           price:
             planType === 'basic'
-              ? 'price_1QqJktImbnhk3Vamex5pRZla' //teste id
-              : 'price_1QqJkYImbnhk3VamParAbIol', //teste id
+              ? 'price_1QqJktImbnhk3Vamex5pRZla'
+              : 'price_1QqJkYImbnhk3VamParAbIol',
           quantity: 1,
         },
       ],
@@ -50,27 +50,27 @@ export class PaymentService {
   async handleWebhook(rawBody: string, signature: string) {
     try {
       console.log('Iniciando processamento do webhook');
-
       const webhookSecret = this.configService.get<string>(
         'STRIPE_WEBHOOK_SECRET',
       );
+
       if (!webhookSecret) {
-        console.error('Webhook secret não encontrado');
-        throw new Error('Stripe webhook secret is not defined');
+        throw new Error('Webhook secret não está configurado');
       }
 
+      console.log('Construindo evento do Stripe...');
       const event = this.stripe.webhooks.constructEvent(
         rawBody,
         signature,
         webhookSecret,
       );
 
-      console.log('Evento recebido:', event.type);
+      console.log('Evento Stripe construído:', event.type);
 
       if (event.type === 'checkout.session.completed') {
+        console.log('Checkout session completed:', event.data.object);
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Verificar se os dados necessários existem
         if (
           !session.metadata?.email ||
           !session.metadata?.planType ||
@@ -79,18 +79,20 @@ export class PaymentService {
           throw new Error('Dados necessários não encontrados na sessão');
         }
 
+        console.log('Metadata:', session.metadata);
+        console.log('Customer:', session.customer);
+        console.log('Subscription:', session.subscription);
+
         await this.createSubscription(
           session.metadata.email,
           session.metadata.planType,
-          session.subscription as string,
+          (session.subscription as Stripe.Subscription).id,
         );
-
-        console.log('Subscription criada com sucesso');
       }
 
       return { received: true };
     } catch (error) {
-      console.error('Erro no processamento do webhook:', error);
+      console.error('Erro detalhado no webhook:', error.message);
       throw error;
     }
   }

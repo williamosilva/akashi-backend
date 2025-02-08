@@ -50,20 +50,34 @@ export class PaymentController {
       'STRIPE_WEBHOOK_SECRET',
     );
     console.log('Webhook Secret:', webhookSecret ? 'Presente' : 'Ausente');
+    console.log('Stripe Signature recebido:', signature);
+
     try {
-      console.log('Webhook recebido');
-      console.log('Signature:', signature);
-      console.log('Raw body:', req.rawBody);
+      if (!webhookSecret) {
+        console.error(
+          'STRIPE_WEBHOOK_SECRET não encontrado nas variáveis de ambiente',
+        );
+        throw new Error('Webhook secret não configurado');
+      }
+
+      if (!signature) {
+        console.error('stripe-signature não encontrado no header');
+        throw new Error('Stripe signature não encontrado');
+      }
+
+      if (!req.rawBody) {
+        console.error('rawBody não está presente na requisição');
+        throw new Error('Raw body não encontrado');
+      }
 
       const result = await this.paymentService.handleWebhook(
         req.rawBody,
         signature,
       );
-      console.log('Webhook processado com sucesso:', result);
 
-      return { received: true };
+      return result;
     } catch (error) {
-      console.error('Erro ao processar webhook:', error);
+      console.error('Erro detalhado no webhook:', error.message);
       throw error;
     }
   }
