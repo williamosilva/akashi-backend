@@ -3,12 +3,15 @@ import type { PaymentService } from './payment.service';
 import {
   Body,
   Controller,
+  Headers,
   Post,
   Req,
   Request,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('payments')
 export class PaymentController {
@@ -40,15 +43,26 @@ export class PaymentController {
     }
   }
 
+  @Public()
   @Post('webhook')
-  async handleWebhook(@Req() req) {
-    const webhookSecret = this.configService.get<string>('SECRET_KEY');
-    console.log('Webhook Secret:', webhookSecret ? 'Presente' : 'Ausente');
+  async handleWebhook(@Req() req, @Headers('x-secret-key') secretKey: string) {
+    const expectedSecretKey = this.configService.get<string>('SECRET_KEY');
+    console.log('Webhook Secret:', expectedSecretKey ? 'Presente' : 'Ausente');
 
     try {
-      if (!webhookSecret) {
+      if (!expectedSecretKey) {
         console.error('SECRET_KEY não encontrada nas variáveis de ambiente');
         throw new Error('Secret key não configurada');
+      }
+
+      if (!secretKey) {
+        console.error('x-secret-key não encontrado no header');
+        throw new UnauthorizedException('Secret key is missing in headers');
+      }
+
+      if (secretKey !== expectedSecretKey) {
+        console.error('x-secret-key inválida');
+        throw new UnauthorizedException('Invalid secret key');
       }
 
       if (!req.rawBody) {
@@ -58,7 +72,7 @@ export class PaymentController {
 
       const result = await this.paymentService.handleWebhook(
         req.rawBody,
-        webhookSecret,
+        req.headers['stripe-signature'] as string,
       );
 
       return result;

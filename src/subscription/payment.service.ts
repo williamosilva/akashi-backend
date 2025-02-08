@@ -47,13 +47,9 @@ export class PaymentService {
     return { checkoutUrl: session.url };
   }
 
-  async handleWebhook(rawBody: string, secretKey: string) {
+  async handleWebhook(rawBody: string, signature: string) {
     try {
       console.log('Iniciando processamento do webhook');
-
-      if (!secretKey) {
-        throw new Error('Secret key não está configurada');
-      }
 
       const webhookSecret = this.configService.get<string>(
         'STRIPE_WEBHOOK_SECRET',
@@ -65,7 +61,7 @@ export class PaymentService {
       console.log('Construindo evento do Stripe...');
       const event = this.stripe.webhooks.constructEvent(
         rawBody,
-        secretKey,
+        signature,
         webhookSecret,
       );
 
@@ -100,7 +96,6 @@ export class PaymentService {
       throw error;
     }
   }
-
   async createSubscription(
     email: string,
     planType: string,
