@@ -102,16 +102,30 @@ export class PaymentService {
     planType: string,
     stripeSubscriptionId: string,
   ) {
-    const stripeSubscription =
-      await this.stripe.subscriptions.retrieve(stripeSubscriptionId);
-
-    const subscription = new this.subscriptionModel({
+    console.log('Creating subscription:', {
       email,
-      plan: planType,
+      planType,
       stripeSubscriptionId,
-      endsAt: new Date(stripeSubscription.current_period_end * 1000),
     });
 
-    return subscription.save();
+    try {
+      const stripeSubscription =
+        await this.stripe.subscriptions.retrieve(stripeSubscriptionId);
+      console.log('Retrieved Stripe subscription:', stripeSubscription);
+
+      const subscription = new this.subscriptionModel({
+        email,
+        plan: planType,
+        stripeSubscriptionId,
+        endsAt: new Date(stripeSubscription.current_period_end * 1000),
+      });
+
+      const savedSubscription = await subscription.save();
+      console.log('Saved subscription:', savedSubscription);
+      return savedSubscription;
+    } catch (error) {
+      console.error('Error in createSubscription:', error);
+      throw error;
+    }
   }
 }
