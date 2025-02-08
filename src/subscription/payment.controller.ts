@@ -42,6 +42,21 @@ export class PaymentController {
     @Req() req,
     @Headers('stripe-signature') signature: string,
   ) {
-    return this.paymentService.handleWebhook(req.rawBody, signature);
+    try {
+      console.log('Webhook recebido');
+      console.log('Signature:', signature);
+      console.log('Raw body:', req.rawBody);
+
+      const result = await this.paymentService.handleWebhook(
+        req.rawBody,
+        signature,
+      );
+      console.log('Webhook processado com sucesso:', result);
+
+      return { received: true };
+    } catch (error) {
+      console.error('Erro ao processar webhook:', error);
+      throw error;
+    }
   }
 }

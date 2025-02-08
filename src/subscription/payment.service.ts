@@ -48,34 +48,45 @@ export class PaymentService {
   }
 
   async handleWebhook(rawBody: string, signature: string) {
-    const webhookSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
-    if (!webhookSecret) {
-      throw new Error('Stripe webhook secret is not defined');
-    }
+    try {
+      console.log('Iniciando processamento do webhook');
 
-    const event = this.stripe.webhooks.constructEvent(
-      rawBody,
-      signature,
-      webhookSecret,
-    );
-
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-
-      // Verificação de segurança para o metadata
-      if (
-        !session.metadata ||
-        !session.metadata.email ||
-        !session.metadata.planType
-      ) {
-        throw new Error('Invalid session metadata');
+      const webhookSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
+      if (!webhookSecret) {
+        console.error('Webhook secret não encontrado');
+        throw new Error('Stripe webhook secret is not defined');
       }
 
-      await this.createSubscription(
-        session.metadata.email,
-        session.metadata.planType,
-        session.subscription as string,
+      const event = this.stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        webhookSecret,
       );
+
+      console.log('Evento recebido:', event.type);
+
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as Stripe.Checkout.Session;
+
+        console.log('Session:', {
+          email: session.metadata?.email,
+          planType: session.metadata?.planType,
+          subscription: session.subscription,
+        });
+
+        await this.createSubscription(
+          session.metadata?.email,
+          session.metadata?.planType,
+          session.subscription as string,
+        );
+
+        console.log('Subscription criada com sucesso');
+      }
+
+      return { received: true };
+    } catch (error) {
+      console.error('Erro no processamento do webhook:', error);
+      throw error;
     }
   }
 

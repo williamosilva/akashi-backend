@@ -6,6 +6,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use('/payments/webhook', express.raw({ type: 'application/json' }));
+
   const config = new DocumentBuilder()
     .setTitle('Akashi API')
     .setDescription(
