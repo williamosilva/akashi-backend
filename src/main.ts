@@ -5,7 +5,9 @@ import { AppModule } from './app.module';
 import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
 
   app.enableCors({
     origin: true,
@@ -13,9 +15,13 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
   });
 
-  // Importante: configuração do raw body para webhook ANTES de outros middlewares
-  app.use('/payments/webhook', express.raw({ type: 'application/json' }));
-
+  app.use(
+    express.json({
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   const config = new DocumentBuilder()
     .setTitle('Akashi API')
     .setDescription(

@@ -9,10 +9,14 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('payments')
 export class PaymentController {
-  constructor(private paymentService: PaymentService) {}
+  constructor(
+    private paymentService: PaymentService,
+    private configService: ConfigService,
+  ) {}
 
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
@@ -42,6 +46,10 @@ export class PaymentController {
     @Req() req,
     @Headers('stripe-signature') signature: string,
   ) {
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
+    console.log('Webhook Secret:', webhookSecret ? 'Presente' : 'Ausente');
     try {
       console.log('Webhook recebido');
       console.log('Signature:', signature);
