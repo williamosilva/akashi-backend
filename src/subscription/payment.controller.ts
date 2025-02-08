@@ -1,15 +1,14 @@
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
-import { PaymentService } from './payment.service';
+import type { PaymentService } from './payment.service';
 import {
   Body,
   Controller,
-  Headers,
   Post,
   Req,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 
 @Controller('payments')
 export class PaymentController {
@@ -42,27 +41,14 @@ export class PaymentController {
   }
 
   @Post('webhook')
-  async handleWebhook(
-    @Req() req,
-    @Headers('stripe-signature') signature: string,
-  ) {
-    const webhookSecret = this.configService.get<string>(
-      'STRIPE_WEBHOOK_SECRET',
-    );
+  async handleWebhook(@Req() req) {
+    const webhookSecret = this.configService.get<string>('SECRET_KEY');
     console.log('Webhook Secret:', webhookSecret ? 'Presente' : 'Ausente');
-    console.log('Stripe Signature recebido:', signature);
 
     try {
       if (!webhookSecret) {
-        console.error(
-          'STRIPE_WEBHOOK_SECRET não encontrado nas variáveis de ambiente',
-        );
-        throw new Error('Webhook secret não configurado');
-      }
-
-      if (!signature) {
-        console.error('stripe-signature não encontrado no header');
-        throw new Error('Stripe signature não encontrado');
+        console.error('SECRET_KEY não encontrada nas variáveis de ambiente');
+        throw new Error('Secret key não configurada');
       }
 
       if (!req.rawBody) {
@@ -72,7 +58,7 @@ export class PaymentController {
 
       const result = await this.paymentService.handleWebhook(
         req.rawBody,
-        signature,
+        webhookSecret,
       );
 
       return result;
