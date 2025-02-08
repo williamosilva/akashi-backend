@@ -1,5 +1,5 @@
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
-import { PaymentService } from './payment.service';
+import type { PaymentService } from './payment.service';
 import {
   Body,
   Controller,
@@ -8,12 +8,17 @@ import {
   Req,
   Request,
   UseGuards,
+  Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('payments')
 export class PaymentController {
+  private readonly logger = new Logger(PaymentController.name);
+
   constructor(
     private paymentService: PaymentService,
     private configService: ConfigService,
@@ -26,21 +31,25 @@ export class PaymentController {
     @Request() req,
   ) {
     try {
-      console.log('Usuário:', req.user);
-      console.log('Tipo de plano:', planType);
+      this.logger.log('Usuário:', req.user);
+      this.logger.log('Tipo de plano:', planType);
 
       const session = await this.paymentService.createCheckoutSession(
         req.user.email,
         planType,
       );
 
-      console.log('Sessão criada:', session);
+      this.logger.log('Sessão criada:', session);
       return session;
     } catch (error) {
-      console.error('Erro no checkout:', error);
-      throw error;
+      this.logger.error('Erro no checkout:', error);
+      throw new HttpException(
+        'Erro ao criar sessão de checkout',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
+
   @Public()
   @Post('webhook')
   async handleWebhook(
@@ -50,24 +59,24 @@ export class PaymentController {
     const webhookSecret = this.configService.get<string>(
       'STRIPE_WEBHOOK_SECRET',
     );
-    console.log('Webhook Secret:', webhookSecret ? 'Presente' : 'Ausente');
-    console.log('Stripe Signature recebido:', signature);
+    this.logger.log('Webhook Secret:', webhookSecret ? 'Presente' : 'Ausente');
+    this.logger.log('Stripe Signature recebido:', signature);
 
     try {
       if (!webhookSecret) {
-        console.error(
+        this.logger.error(
           'STRIPE_WEBHOOK_SECRET não encontrado nas variáveis de ambiente',
         );
         throw new Error('Webhook secret não configurado');
       }
 
       if (!signature) {
-        console.error('stripe-signature não encontrado no header');
+        this.logger.error('stripe-signature não encontrado no header');
         throw new Error('Stripe signature não encontrado');
       }
 
       if (!req.rawBody) {
-        console.error('rawBody não está presente na requisição');
+        this.logger.error('rawBody não está presente na requisição');
         throw new Error('Raw body não encontrado');
       }
 
@@ -75,11 +84,18 @@ export class PaymentController {
         req.rawBody,
         signature,
       );
+      // @ts-ignore
+      if (result.error) {
+        // @ts-ignore
+        throw new Error(result.error);
+      }
 
       return result;
     } catch (error) {
-      console.error('Erro detalhado no webhook:', error.message);
-      throw error;
+      this.logger.error('Erro detalhado no webhook:', error.message);
+      // Return a 200 status to acknowledge receipt of the webhook
+      // This prevents Stripe from retrying the webhook
+      return { received: true, error: error.message };
     }
   }
 }
