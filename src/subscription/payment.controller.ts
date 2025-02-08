@@ -1,5 +1,5 @@
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
-import type { PaymentService } from './payment.service';
+import { PaymentService } from './payment.service';
 import {
   Body,
   Controller,
@@ -8,9 +8,8 @@ import {
   Req,
   Request,
   UseGuards,
-  UnauthorizedException,
 } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('payments')
@@ -42,27 +41,29 @@ export class PaymentController {
       throw error;
     }
   }
-
   @Public()
   @Post('webhook')
-  async handleWebhook(@Req() req, @Headers('x-secret-key') secretKey: string) {
-    const expectedSecretKey = this.configService.get<string>('SECRET_KEY');
-    console.log('Webhook Secret:', expectedSecretKey ? 'Presente' : 'Ausente');
+  async handleWebhook(
+    @Req() req,
+    @Headers('stripe-signature') signature: string,
+  ) {
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
+    console.log('Webhook Secret:', webhookSecret ? 'Presente' : 'Ausente');
+    console.log('Stripe Signature recebido:', signature);
 
     try {
-      if (!expectedSecretKey) {
-        console.error('SECRET_KEY não encontrada nas variáveis de ambiente');
-        throw new Error('Secret key não configurada');
+      if (!webhookSecret) {
+        console.error(
+          'STRIPE_WEBHOOK_SECRET não encontrado nas variáveis de ambiente',
+        );
+        throw new Error('Webhook secret não configurado');
       }
 
-      if (!secretKey) {
-        console.error('x-secret-key não encontrado no header');
-        throw new UnauthorizedException('Secret key is missing in headers');
-      }
-
-      if (secretKey !== expectedSecretKey) {
-        console.error('x-secret-key inválida');
-        throw new UnauthorizedException('Invalid secret key');
+      if (!signature) {
+        console.error('stripe-signature não encontrado no header');
+        throw new Error('Stripe signature não encontrado');
       }
 
       if (!req.rawBody) {
@@ -72,7 +73,7 @@ export class PaymentController {
 
       const result = await this.paymentService.handleWebhook(
         req.rawBody,
-        req.headers['stripe-signature'] as string,
+        signature,
       );
 
       return result;
