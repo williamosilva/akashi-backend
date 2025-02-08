@@ -51,7 +51,9 @@ export class PaymentService {
     try {
       console.log('Iniciando processamento do webhook');
 
-      const webhookSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
+      const webhookSecret = this.configService.get<string>(
+        'STRIPE_WEBHOOK_SECRET',
+      );
       if (!webhookSecret) {
         console.error('Webhook secret não encontrado');
         throw new Error('Stripe webhook secret is not defined');
@@ -68,15 +70,18 @@ export class PaymentService {
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        console.log('Session:', {
-          email: session.metadata?.email,
-          planType: session.metadata?.planType,
-          subscription: session.subscription,
-        });
+        // Verificar se os dados necessários existem
+        if (
+          !session.metadata?.email ||
+          !session.metadata?.planType ||
+          !session.subscription
+        ) {
+          throw new Error('Dados necessários não encontrados na sessão');
+        }
 
         await this.createSubscription(
-          session.metadata?.email,
-          session.metadata?.planType,
+          session.metadata.email,
+          session.metadata.planType,
           session.subscription as string,
         );
 

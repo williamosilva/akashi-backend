@@ -1,11 +1,19 @@
-import 'dotenv/config'; // Garante que as variáveis do .env sejam carregadas
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
+  });
+
+  // Importante: configuração do raw body para webhook ANTES de outros middlewares
   app.use('/payments/webhook', express.raw({ type: 'application/json' }));
 
   const config = new DocumentBuilder()
@@ -31,7 +39,7 @@ async function bootstrap() {
     customSiteTitle: 'Akashi API Docs',
   });
 
-  const port = process.env.PORT ?? 3000; // Define a porta
+  const port = process.env.PORT ?? 3000;
   await app.listen(port);
   console.log(`🚀 Server running on http://localhost:${port}`);
 }
