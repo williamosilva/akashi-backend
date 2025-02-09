@@ -130,4 +130,38 @@ export class PaymentService {
       throw error;
     }
   }
+  async verifySubscription(
+    email: string,
+  ): Promise<false | { plan: 'basic' | 'premium' }> {
+    try {
+      // Busca a assinatura mais recente do usuário
+      const subscription = await this.subscriptionModel.findOne(
+        { email },
+        {},
+        { sort: { createdAt: -1 } },
+      );
+
+      // Se não existir assinatura, retorna false
+      if (!subscription) {
+        return false;
+      }
+
+      // Verifica se a assinatura ainda está válida
+      const now = new Date();
+      const endsAt = new Date(subscription.endsAt);
+
+      // Se a data atual for maior que a data de término, a assinatura expirou
+      if (now > endsAt) {
+        return false;
+      }
+
+      // Retorna o plano atual do usuário
+      return {
+        plan: subscription.plan as 'basic' | 'premium',
+      };
+    } catch (error) {
+      console.error('Error verifying subscription:', error);
+      return false;
+    }
+  }
 }

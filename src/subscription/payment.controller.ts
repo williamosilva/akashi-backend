@@ -5,6 +5,7 @@ import {
   Controller,
   Headers,
   Post,
+  Get,
   Req,
   Request,
   UseGuards,
@@ -41,6 +42,25 @@ export class PaymentController {
       throw error;
     }
   }
+
+  @Get('verify-subscription')
+  @UseGuards(JwtAuthGuard)
+  async verifySubscription(@Request() req) {
+    try {
+      const subscription = await this.paymentService.verifySubscription(
+        req.user.email,
+      );
+
+      return {
+        hasActiveSubscription: subscription !== false,
+        subscription: subscription || null,
+      };
+    } catch (error) {
+      console.error('Erro ao verificar assinatura:', error);
+      throw error;
+    }
+  }
+
   @Public()
   @Post('webhook')
   async handleWebhook(
