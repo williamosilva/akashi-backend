@@ -8,6 +8,7 @@ import {
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { AuthModule } from '../auth/auth.module';
+import { SessionToken, SessionTokenSchema } from './schemas/sessionToken.scema';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
     MongooseModule.forFeature([
       { name: Subscription.name, schema: SubscriptionSchema },
+      { name: SessionToken.name, schema: SessionTokenSchema },
     ]),
   ],
   controllers: [PaymentController],

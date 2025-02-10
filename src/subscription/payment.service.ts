@@ -4,10 +4,19 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import Stripe from 'stripe';
 import { Subscription } from './schemas/subscription.schema';
+import { SessionToken } from './schemas/sessionToken.scema';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class PaymentService {
   private stripe: Stripe;
+
+  @InjectModel(SessionToken.name)
+  private sessionTokenModel: Model<SessionToken>;
+
+  private generateUniqueToken(): string {
+    return randomBytes(32).toString('hex');
+  }
 
   constructor(
     private configService: ConfigService,
@@ -23,6 +32,10 @@ export class PaymentService {
   }
 
   async createCheckoutSession(email: string, planType: 'basic' | 'premium') {
+    // Gerar token único
+    const sessionToken = this.generateUniqueToken();
+
+    // Criar sessão no Stripe com token
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
@@ -36,15 +49,27 @@ export class PaymentService {
         },
       ],
       customer_email: email,
-      success_url: `${process.env.FRONTEND_URL}/success`,
-      cancel_url: `${process.env.FRONTEND_URL}/cancel`,
+      success_url: `${process.env.FRONTEND_URL}/success/${sessionToken}`,
+      cancel_url: `${process.env.FRONTEND_URL}/cancel/${sessionToken}`,
       metadata: {
         email,
         planType,
+        sessionToken, // Adicionar token único
       },
     });
 
-    return { checkoutUrl: session.url };
+    // Salvar token de sessão
+    await this.sessionTokenModel.create({
+      token: sessionToken,
+      email,
+      planType,
+      status: 'pending',
+    });
+
+    return {
+      checkoutUrl: session.url,
+      sessionToken,
+    };
   }
 
   async handleWebhook(rawBody: string, secretKey: string) {
@@ -67,28 +92,43 @@ export class PaymentService {
         webhookSecret,
       );
 
-      console.log('Evento Stripe construído:', event.type);
-
       if (event.type === 'checkout.session.completed') {
-        console.log('Checkout session completed:', event.data.object);
         const session = event.data.object as Stripe.Checkout.Session;
 
+        // Verificação adicional de token
         if (
           !session.metadata?.email ||
           !session.metadata?.planType ||
+          !session.metadata?.sessionToken || // Novo campo
           !session.subscription
         ) {
           throw new Error('Dados necessários não encontrados na sessão');
         }
 
-        console.log('Metadata:', session.metadata);
-        console.log('Customer:', session.customer);
-        console.log('Subscription:', session.subscription);
+        // Verificar e atualizar status do token
+        const sessionToken = await this.sessionTokenModel.findOne({
+          token: session.metadata.sessionToken,
+          status: 'pending',
+        });
 
+        if (!sessionToken) {
+          throw new Error('Token de sessão inválido ou já processado');
+        }
+
+        // Criar assinatura
         await this.createSubscription(
           session.metadata.email,
           session.metadata.planType,
           session.subscription as string,
+        );
+
+        // Atualizar status do token
+        await this.sessionTokenModel.updateOne(
+          { token: session.metadata.sessionToken },
+          {
+            status: 'completed',
+            processedAt: new Date(),
+          },
         );
       }
 
@@ -96,6 +136,34 @@ export class PaymentService {
     } catch (error) {
       console.error('Erro detalhado no webhook:', error.message);
       throw error;
+    }
+  }
+
+  async verifySessionToken(token: string) {
+    try {
+      const sessionToken = await this.sessionTokenModel.findOne({
+        token,
+        status: 'pending',
+      });
+
+      if (!sessionToken) {
+        return {
+          valid: false,
+          message: 'Token inválido ou já processado',
+        };
+      }
+
+      return {
+        valid: true,
+        email: sessionToken.email,
+        planType: sessionToken.planType,
+      };
+    } catch (error) {
+      console.error('Erro ao verificar token de sessão:', error);
+      return {
+        valid: false,
+        message: 'Erro ao verificar token',
+      };
     }
   }
 
