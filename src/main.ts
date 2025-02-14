@@ -16,7 +16,7 @@ async function bootstrap() {
       'Content-Type',
       'Authorization',
       'stripe-signature',
-      'x-api-key',
+      'x-secret-key',
     ],
     credentials: true,
   });
