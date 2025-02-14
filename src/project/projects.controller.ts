@@ -154,8 +154,8 @@ export class ProjectsController {
         description: 'Project Description',
         dataInfo: {
           key1: {
-            uriApi: 'https://api.example.com/data',
-            ref: 'data',
+            apiUrl: 'https://api.example.com/data',
+            JSONPath: 'data',
             dataReturn: 'API Response Data',
           },
         },

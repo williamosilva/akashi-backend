@@ -10,6 +10,7 @@ import { Project } from './schemas/project.schema';
 import { User } from '../auth/schemas/user.schema';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import axios from 'axios';
+import * as jsonpath from 'jsonpath';
 
 @Injectable()
 export class ProjectsService {
@@ -39,24 +40,35 @@ export class ProjectsService {
 
     if (createProjectDto.dataInfo) {
       for (const [key, value] of Object.entries(createProjectDto.dataInfo)) {
-        if (typeof value === 'object' && value.uriApi) {
+        if (typeof value === 'object' && value.apiUrl) {
           try {
-            const apiResponse = await axios.get(value.uriApi);
+            const apiResponse = await axios.get(value.apiUrl);
+            let dataReturn;
 
-            const dataReturn = value.ref
-              ? apiResponse.data[value.ref]
-              : apiResponse.data;
+            if (value.JSONPath) {
+              try {
+                const results = jsonpath.query(
+                  apiResponse.data,
+                  value.JSONPath,
+                );
+                dataReturn =
+                  results.length > 0
+                    ? results[0]
+                    : `No data found for JSONPath expression: "${value.JSONPath}"`;
+              } catch (jsonPathError) {
+                dataReturn = `Invalid JSONPath expression: "${value.JSONPath}". Error: ${jsonPathError.message}`;
+              }
+            } else {
+              dataReturn = apiResponse.data;
+            }
 
             createProjectDto.dataInfo[key] = {
               ...value,
-              dataReturn:
-                dataReturn !== undefined
-                  ? dataReturn
-                  : `API responded successfully, but key "${value.ref}" was not found.`,
+              dataReturn,
             };
           } catch (error) {
             console.error(
-              `Error fetching data from API (${value.uriApi}):`,
+              `Error fetching data from API (${value.apiUrl}):`,
               error.message,
             );
             createProjectDto.dataInfo[key] = {
@@ -91,24 +103,35 @@ export class ProjectsService {
 
     if (project.dataInfo) {
       for (const [key, value] of Object.entries(project.dataInfo)) {
-        if (typeof value === 'object' && value.uriApi) {
+        if (typeof value === 'object' && value.apiUrl) {
           try {
-            const apiResponse = await axios.get(value.uriApi);
+            const apiResponse = await axios.get(value.apiUrl);
+            let dataReturn;
 
-            const dataReturn = value.ref
-              ? apiResponse.data[value.ref]
-              : apiResponse.data;
+            if (value.JSONPath) {
+              try {
+                const results = jsonpath.query(
+                  apiResponse.data,
+                  value.JSONPath,
+                );
+                dataReturn =
+                  results.length > 0
+                    ? results[0]
+                    : `No data found for JSONPath expression: "${value.JSONPath}"`;
+              } catch (jsonPathError) {
+                dataReturn = `Invalid JSONPath expression: "${value.JSONPath}". Error: ${jsonPathError.message}`;
+              }
+            } else {
+              dataReturn = apiResponse.data;
+            }
 
             project.dataInfo[key] = {
               ...value,
-              dataReturn:
-                dataReturn !== undefined
-                  ? dataReturn
-                  : `API responded successfully, but key "${value.ref}" was not found.`,
+              dataReturn,
             };
           } catch (error) {
             console.error(
-              `Error fetching data from API (${value.uriApi}):`,
+              `Error fetching data from API (${value.apiUrl}):`,
               error.message,
             );
             project.dataInfo[key] = {
@@ -135,24 +158,35 @@ export class ProjectsService {
 
     if (updateProjectDto.dataInfo) {
       for (const [key, value] of Object.entries(updateProjectDto.dataInfo)) {
-        if (typeof value === 'object' && value.uriApi) {
+        if (typeof value === 'object' && value.apiUrl) {
           try {
-            const apiResponse = await axios.get(value.uriApi);
+            const apiResponse = await axios.get(value.apiUrl);
+            let dataReturn;
 
-            const dataReturn = value.ref
-              ? apiResponse.data[value.ref]
-              : apiResponse.data;
+            if (value.JSONPath) {
+              try {
+                const results = jsonpath.query(
+                  apiResponse.data,
+                  value.JSONPath,
+                );
+                dataReturn =
+                  results.length > 0
+                    ? results[0]
+                    : `No data found for JSONPath expression: "${value.JSONPath}"`;
+              } catch (jsonPathError) {
+                dataReturn = `Invalid JSONPath expression: "${value.JSONPath}". Error: ${jsonPathError.message}`;
+              }
+            } else {
+              dataReturn = apiResponse.data;
+            }
 
             updateProjectDto.dataInfo[key] = {
               ...value,
-              dataReturn:
-                dataReturn !== undefined
-                  ? dataReturn
-                  : `API responded successfully, but key "${value.ref}" was not found.`,
+              dataReturn,
             };
           } catch (error) {
             console.error(
-              `Error fetching data from API (${value.uriApi}):`,
+              `Error fetching data from API (${value.apiUrl}):`,
               error.message,
             );
             updateProjectDto.dataInfo[key] = {
@@ -164,7 +198,6 @@ export class ProjectsService {
       }
     }
 
-    // Atualização com { new: true } para retornar o objeto atualizado
     const updatedProject = await this.projectModel.findByIdAndUpdate(
       projectId,
       { $set: updateProjectDto },
