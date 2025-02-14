@@ -10,9 +10,10 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: true,
+    origin: ['http://localhost:3000', process.env.FRONTEND_URL],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
+    credentials: true,
   });
 
   app.use(
