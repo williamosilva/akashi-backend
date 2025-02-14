@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   Subscription,
@@ -9,6 +9,7 @@ import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { AuthModule } from '../auth/auth.module';
 import { SessionToken, SessionTokenSchema } from './schemas/sessionToken.scema';
+import { User, UserSchema } from '../auth/schemas/user.schema';
 
 @Module({
   imports: [
@@ -17,9 +18,10 @@ import { SessionToken, SessionTokenSchema } from './schemas/sessionToken.scema';
     MongooseModule.forFeature([
       { name: Subscription.name, schema: SubscriptionSchema },
       { name: SessionToken.name, schema: SessionTokenSchema },
+      { name: User.name, schema: UserSchema },
     ]),
   ],
   controllers: [PaymentController],
-  providers: [PaymentService, ConfigService],
+  providers: [PaymentService],
 })
 export class PaymentModule {}

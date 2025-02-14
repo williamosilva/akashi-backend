@@ -43,14 +43,13 @@ export class AuthService {
       email,
       password: hashedPassword,
       fullName,
+      plan: 'free',
     });
 
     const tokens = await this.generateTokens(user.id, user.email);
 
     return {
       id: user.id,
-      // email: user.email,
-      // fullName: user.fullName,
       ...tokens,
     };
   }
@@ -111,7 +110,6 @@ export class AuthService {
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
     try {
-      // Fallback para um email gerado se nenhum email for encontrado
       const email = profile.email || `${profile.id}@${provider}.social`;
 
       let user = await this.userModel.findOne({ email });
@@ -123,6 +121,7 @@ export class AuthService {
           provider,
           providerId: profile.id,
           photo: profile.photo,
+          plan: 'free',
         });
       } else if (user.provider !== provider) {
         user.provider = provider;

@@ -5,6 +5,7 @@ import { Model } from 'mongoose';
 import Stripe from 'stripe';
 import { Subscription } from './schemas/subscription.schema';
 import { SessionToken } from './schemas/sessionToken.scema';
+import { User } from '../auth/schemas/user.schema';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -13,6 +14,9 @@ export class PaymentService {
 
   @InjectModel(SessionToken.name)
   private sessionTokenModel: Model<SessionToken>;
+
+  @InjectModel(User.name) // Inject the User model
+  private userModel: Model<User>;
 
   private generateUniqueToken(): string {
     return randomBytes(32).toString('hex');
@@ -32,10 +36,10 @@ export class PaymentService {
   }
 
   async createCheckoutSession(email: string, planType: 'basic' | 'premium') {
-    // Gerar token único
+    // Generate unique token
     const sessionToken = this.generateUniqueToken();
 
-    // Criar sessão no Stripe com token
+    // Create Stripe session with token
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
@@ -54,11 +58,11 @@ export class PaymentService {
       metadata: {
         email,
         planType,
-        sessionToken, // Adicionar token único
+        sessionToken, // Add unique token
       },
     });
 
-    // Salvar token de sessão
+    // Save session token
     await this.sessionTokenModel.create({
       token: sessionToken,
       email,
@@ -74,18 +78,18 @@ export class PaymentService {
 
   async handleWebhook(rawBody: string, secretKey: string) {
     try {
-      console.log('Iniciando processamento do webhook');
+      console.log('Starting webhook processing');
       if (!secretKey) {
-        throw new Error('Secret key não está configurada');
+        throw new Error('Secret key is not configured');
       }
       const webhookSecret = this.configService.get<string>(
         'STRIPE_WEBHOOK_SECRET',
       );
       if (!webhookSecret) {
-        throw new Error('STRIPE_WEBHOOK_SECRET não está configurado');
+        throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
       }
 
-      console.log('Construindo evento do Stripe...');
+      console.log('Constructing Stripe event...');
       const event = this.stripe.webhooks.constructEvent(
         rawBody,
         secretKey,
@@ -95,34 +99,40 @@ export class PaymentService {
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Verificação adicional de token
+        // Additional token verification
         if (
           !session.metadata?.email ||
           !session.metadata?.planType ||
-          !session.metadata?.sessionToken || // Novo campo
+          !session.metadata?.sessionToken || // New field
           !session.subscription
         ) {
-          throw new Error('Dados necessários não encontrados na sessão');
+          throw new Error('Required data not found in session');
         }
 
-        // Verificar e atualizar status do token
+        // Verify and update token status
         const sessionToken = await this.sessionTokenModel.findOne({
           token: session.metadata.sessionToken,
           status: 'pending',
         });
 
         if (!sessionToken) {
-          throw new Error('Token de sessão inválido ou já processado');
+          throw new Error('Invalid or already processed session token');
         }
 
-        // Criar assinatura
+        // Create subscription
         await this.createSubscription(
           session.metadata.email,
           session.metadata.planType,
           session.subscription as string,
         );
 
-        // Atualizar status do token
+        // Update user's plan
+        await this.userModel.updateOne(
+          { email: session.metadata.email },
+          { plan: session.metadata.planType },
+        );
+
+        // Update token status
         await this.sessionTokenModel.updateOne(
           { token: session.metadata.sessionToken },
           {
@@ -134,7 +144,7 @@ export class PaymentService {
 
       return { received: true };
     } catch (error) {
-      console.error('Erro detalhado no webhook:', error.message);
+      console.error('Detailed error in webhook:', error.message);
       throw error;
     }
   }
@@ -149,7 +159,7 @@ export class PaymentService {
       if (!sessionToken) {
         return {
           valid: false,
-          message: 'Token inválido ou já processado',
+          message: 'Invalid or already processed token',
         };
       }
 
@@ -159,10 +169,10 @@ export class PaymentService {
         planType: sessionToken.planType,
       };
     } catch (error) {
-      console.error('Erro ao verificar token de sessão:', error);
+      console.error('Error verifying session token:', error);
       return {
         valid: false,
-        message: 'Erro ao verificar token',
+        message: 'Error verifying token',
       };
     }
   }
@@ -198,32 +208,33 @@ export class PaymentService {
       throw error;
     }
   }
+
   async verifySubscription(
     email: string,
   ): Promise<false | { plan: 'basic' | 'premium' }> {
     try {
-      // Busca a assinatura mais recente do usuário
+      // Find the user's most recent subscription
       const subscription = await this.subscriptionModel.findOne(
         { email },
         {},
         { sort: { createdAt: -1 } },
       );
 
-      // Se não existir assinatura, retorna false
+      // If no subscription exists, return false
       if (!subscription) {
         return false;
       }
 
-      // Verifica se a assinatura ainda está válida
+      // Check if the subscription is still valid
       const now = new Date();
       const endsAt = new Date(subscription.endsAt);
 
-      // Se a data atual for maior que a data de término, a assinatura expirou
+      // If the current date is greater than the end date, the subscription has expired
       if (now > endsAt) {
         return false;
       }
 
-      // Retorna o plano atual do usuário
+      // Return the user's current plan
       return {
         plan: subscription.plan as 'basic' | 'premium',
       };

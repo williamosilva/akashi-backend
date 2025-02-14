@@ -20,6 +20,9 @@ export class User extends Document {
 
   @Prop()
   photo?: string;
+
+  @Prop({ default: 'free' })
+  plan?: 'free' | 'basic' | 'premium' | 'admin';
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

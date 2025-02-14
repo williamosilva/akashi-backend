@@ -4,6 +4,7 @@ interface ApiDataInfo {
   apiUrl: string;
   JSONPath?: string;
   dataReturn?: any;
+  [apiKeyName: string]: string | any;
 }
 
 export class CreateProjectDto {
@@ -24,6 +25,7 @@ export class CreateProjectDto {
       cliente: {
         apiUrl: 'https://api.example.com/cliente',
         JSONPath: '$.store.book[0].client',
+        x_api_key: 'your-api-key-here',
       },
       orcamento: 50000,
     },
@@ -35,7 +37,11 @@ export class CreateProjectDto {
 export class UpdateProjectDto {
   @ApiPropertyOptional({
     example: {
-      cliente: { apiUrl: 'https://api.example.com/cliente', JSONPath: 'data' },
+      cliente: {
+        apiUrl: 'https://api.example.com/cliente',
+        JSONPath: 'data',
+        custom_api_key: 'your-custom-key-here',
+      },
       orcamento: 75000,
     },
     description: 'Informações atualizadas do projeto',
