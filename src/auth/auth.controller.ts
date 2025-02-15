@@ -103,15 +103,15 @@ export class AuthController {
           window.opener.postMessage({
             type: 'oauth-success',
             payload: {
-              accessToken: ${JSON.stringify(result.accessToken)},
-              refreshToken: ${JSON.stringify(result.refreshToken)},
-              user: {
-                id: ${JSON.stringify(result.id)},
-                email: ${JSON.stringify(result.email)},
-                fullName: ${JSON.stringify(result.fullName)},
-                photo: ${JSON.stringify(result.photo)}
-              }
+            accessToken: ${JSON.stringify(result.accessToken)},
+            refreshToken: ${JSON.stringify(result.refreshToken)},
+            user: {
+              id: ${JSON.stringify(result.id)},
+              email: ${JSON.stringify(result.email)},
+              fullName: ${JSON.stringify(result.fullName)},
+              photo: ${JSON.stringify(result.photo)}
             }
+          }
           }, '${process.env.FRONTEND_URL}');
           window.close();
         </script>

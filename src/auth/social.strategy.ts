@@ -98,7 +98,7 @@ export class GitHubAuthStrategy extends PassportStrategy(
     return {
       id: profile.id,
       email: emails[0]?.value || `${profile.id}@github.social`,
-      displayName: profile.displayName || profile.username || 'GitHub User',
+      fullName: profile.displayName || profile.username || 'Usuário GitHub',
       photo: profile.photos?.[0]?.value || '',
       provider: 'github',
     };
