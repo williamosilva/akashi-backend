@@ -9,9 +9,13 @@ interface GitHubProfile {
   id: string;
   displayName?: string;
   username?: string;
-  emails?: Array<{ value: string; primary?: boolean }>;
+  emails?: Array<{ value: string; verified?: boolean; primary?: boolean }>;
   photos?: Array<{ value: string }>;
   provider: string;
+  _json?: {
+    name?: string;
+    avatar_url?: string;
+  };
 }
 
 interface GoogleProfile {
@@ -72,10 +76,10 @@ export class GitHubAuthStrategy extends PassportStrategy(
     refreshToken: string,
     profile: GitHubProfile,
   ) {
+    // Obter emails de forma mais robusta
     let emails = profile.emails || [];
 
-    // Se não encontrar emails e tiver accessToken
-    if (emails.length === 0 && accessToken) {
+    if ((!emails.length || !emails.some((e) => e.verified)) && accessToken) {
       try {
         const emailResponse = await fetch(
           'https://api.github.com/user/emails',
@@ -95,11 +99,21 @@ export class GitHubAuthStrategy extends PassportStrategy(
       }
     }
 
+    // Obter nome completo
+    const displayName =
+      profile.displayName ||
+      profile._json?.name ||
+      profile.username ||
+      'Usuário GitHub';
+
+    // Obter foto do perfil
+    const photo = profile.photos?.[0]?.value || profile._json?.avatar_url || '';
+
     return {
       id: profile.id,
       email: emails[0]?.value || `${profile.id}@github.social`,
-      fullName: profile.displayName || profile.username || 'Usuário GitHub',
-      photo: profile.photos?.[0]?.value || '',
+      fullName: displayName,
+      photo: photo,
       provider: 'github',
     };
   }
