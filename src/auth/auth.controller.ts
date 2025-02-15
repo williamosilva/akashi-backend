@@ -41,17 +41,27 @@ export class AuthController {
         'google',
       );
 
+      // No controller, dentro do googleAuthCallback
       const html = `
-        <html>
-          <script>
-            window.opener.postMessage({
-              type: 'oauth-success',
-              payload: ${JSON.stringify(result)}
-            }, '${process.env.FRONTEND_URL}');
-            window.close();
-          </script>
-        </html>
-      `;
+          <html>
+            <script>
+              window.opener.postMessage({
+                type: 'oauth-success',
+                payload: {
+                  accessToken: ${JSON.stringify(result.accessToken)},
+                  refreshToken: ${JSON.stringify(result.refreshToken)},
+                  user: {
+                    id: ${JSON.stringify(result.id)},
+                    email: ${JSON.stringify(result.email)},
+                    fullName: ${JSON.stringify(result.fullName)},
+                    photo: ${JSON.stringify(result.photo)}
+                  }
+                }
+              }, '${process.env.FRONTEND_URL}');
+              window.close();
+            </script>
+          </html>
+          `;
 
       res.send(html);
     } catch (error) {
