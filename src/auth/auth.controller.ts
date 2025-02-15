@@ -6,6 +6,7 @@ import {
   Get,
   UseGuards,
   Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -33,13 +34,39 @@ export class AuthController {
   @Public()
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  async googleAuthCallback(@Req() req) {
+  async googleAuthCallback(@Req() req, @Res() res) {
     try {
-      console.log('Google callback data:', req.user);
-      return await this.authService.handleSocialLogin(req.user, 'google');
+      const result = await this.authService.handleSocialLogin(
+        req.user,
+        'google',
+      );
+
+      const html = `
+        <html>
+          <script>
+            window.opener.postMessage({
+              type: 'oauth-success',
+              payload: ${JSON.stringify(result)}
+            }, '${process.env.FRONTEND_URL}');
+            window.close();
+          </script>
+        </html>
+      `;
+
+      res.send(html);
     } catch (error) {
-      console.error('Google callback error:', error);
-      throw error;
+      const html = `
+        <html>
+          <script>
+            window.opener.postMessage({
+              type: 'oauth-error',
+              payload: { message: 'Google login failed' }
+            }, '${process.env.FRONTEND_URL}');
+            window.close();
+          </script>
+        </html>
+      `;
+      res.send(html);
     }
   }
   @Public()
