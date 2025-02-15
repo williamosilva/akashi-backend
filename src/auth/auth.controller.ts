@@ -19,6 +19,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './decorators/public.decorator';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from './guards/auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -90,6 +91,35 @@ export class AuthController {
     @Headers('x-secret-key') apiKey: string,
   ) {
     return this.authService.register(registerDto, apiKey);
+  }
+
+  @Post('refresh')
+  @Public()
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiBody({
+    schema: {
+      example: {
+        userId: '60d5ecb54b3xxb2c001f3e1234',
+        email: 'user@example.com',
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed' })
+  async refreshTokens(@Body() body: { userId: string; email: string }) {
+    return this.authService.refreshTokens(body.userId, body.email);
+  }
+
+  @Get('validate')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Validate JWT token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token is valid',
+    schema: { example: { ok: true } },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid token' })
+  async validateToken(@Req() req) {
+    return { ok: true, userId: req.user.sub };
   }
 
   @Public()
