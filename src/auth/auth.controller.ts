@@ -86,11 +86,53 @@ export class AuthController {
   async githubAuth() {
     // Inicia o fluxo de autenticação do GitHub
   }
+  // No controller, modifique o githubAuthCallback
   @Public()
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
-  async githubAuthCallback(@Req() req) {
-    return this.authService.handleSocialLogin(req.user, 'github');
+  async githubAuthCallback(@Req() req, @Res() res) {
+    try {
+      const result = await this.authService.handleSocialLogin(
+        req.user,
+        'github',
+      );
+
+      const html = `
+      <html>
+        <script>
+          window.opener.postMessage({
+            type: 'oauth-success',
+            payload: {
+              accessToken: ${JSON.stringify(result.accessToken)},
+              refreshToken: ${JSON.stringify(result.refreshToken)},
+              user: {
+                id: ${JSON.stringify(result.id)},
+                email: ${JSON.stringify(result.email)},
+                fullName: ${JSON.stringify(result.fullName)},
+                photo: ${JSON.stringify(result.photo)}
+              }
+            }
+          }, '${process.env.FRONTEND_URL}');
+          window.close();
+        </script>
+      </html>
+    `;
+
+      res.send(html);
+    } catch (error) {
+      const html = `
+      <html>
+        <script>
+          window.opener.postMessage({
+            type: 'oauth-error',
+            payload: { message: 'GitHub login failed' }
+          }, '${process.env.FRONTEND_URL}');
+          window.close();
+        </script>
+      </html>
+    `;
+      res.send(html);
+    }
   }
 
   @Public()

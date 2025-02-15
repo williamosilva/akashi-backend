@@ -5,6 +5,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 
+interface GitHubProfile {
+  id: string;
+  displayName?: string;
+  username?: string;
+  emails?: Array<{ value: string; primary?: boolean }>;
+  photos?: Array<{ value: string }>;
+  provider: string;
+}
+
 interface GoogleProfile {
   id: string;
   displayName: string;
@@ -58,35 +67,39 @@ export class GitHubAuthStrategy extends PassportStrategy(
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: any) {
-    const emails = profile.emails || [];
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: GitHubProfile,
+  ) {
+    let emails = profile.emails || [];
 
+    // Se não encontrar emails e tiver accessToken
     if (emails.length === 0 && accessToken) {
       try {
         const emailResponse = await fetch(
           'https://api.github.com/user/emails',
           {
-            headers: {
-              Authorization: `token ${accessToken}`,
-            },
+            headers: { Authorization: `token ${accessToken}` },
           },
         );
-        const emailData = await emailResponse.json();
-        const primaryEmail = emailData.find((email) => email.primary)?.email;
 
-        if (primaryEmail) {
-          emails.push({ value: primaryEmail });
-        }
+        const emailData = await emailResponse.json();
+        emails = emailData
+          .filter((email: any) => email.verified)
+          .sort((a: any, b: any) =>
+            a.primary === b.primary ? 0 : a.primary ? -1 : 1,
+          );
       } catch (error) {
-        console.error('Failed to fetch GitHub email', error);
+        console.error('Failed to fetch GitHub emails:', error);
       }
     }
 
     return {
       id: profile.id,
-      email: emails.length > 0 ? emails[0].value : null,
-      displayName: profile.displayName || profile.username,
-      photo: profile.photos?.[0]?.value,
+      email: emails[0]?.value || `${profile.id}@github.social`,
+      displayName: profile.displayName || profile.username || 'GitHub User',
+      photo: profile.photos?.[0]?.value || '',
       provider: 'github',
     };
   }
