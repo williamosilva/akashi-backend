@@ -36,6 +36,8 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(@Req() req, @Res() res) {
     try {
+      console.log(req.user);
+
       const result = await this.authService.handleSocialLogin(
         req.user,
         'google',
@@ -92,6 +94,7 @@ export class AuthController {
   @UseGuards(AuthGuard('github'))
   async githubAuthCallback(@Req() req, @Res() res) {
     try {
+      console.log('req User', req.user);
       const result = await this.authService.handleSocialLogin(
         req.user,
         'github',
