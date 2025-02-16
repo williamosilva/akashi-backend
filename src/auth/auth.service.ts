@@ -43,10 +43,10 @@ export class AuthService {
     if (existingUser) {
       if (existingUser.provider !== 'local') {
         throw new UnauthorizedException(
-          `Este email já está registrado via ${existingUser.provider}. Faça login usando ${existingUser.provider}.`,
+          `This account is registered via ${existingUser.provider}. Log in using ${existingUser.provider}.`,
         );
       } else {
-        throw new UnauthorizedException('Email já registrado');
+        throw new UnauthorizedException('Email already registered');
       }
     }
 
@@ -57,7 +57,7 @@ export class AuthService {
       password: hashedPassword,
       fullName,
       plan: 'free',
-      provider: 'local', // Adicione esta linha para marcar o provider
+      provider: 'local',
     });
 
     const tokens = await this.generateTokens(user.id, user.email);
@@ -82,18 +82,18 @@ export class AuthService {
     // Verifica se o usuário não é local
     if (user.provider !== 'local') {
       throw new UnauthorizedException(
-        `Esta conta está registrada via ${user.provider}. Faça login usando ${user.provider}.`,
+        `This account is registered via ${user.provider}. Log in using ${user.provider}.`,
       );
     }
 
     // Verifica se a senha está definida
     if (!user.password) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
