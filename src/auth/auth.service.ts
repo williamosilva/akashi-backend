@@ -76,7 +76,7 @@ export class AuthService {
 
     // Verifica se o usuário existe
     if (!user) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     // Verifica se o usuário não é local
