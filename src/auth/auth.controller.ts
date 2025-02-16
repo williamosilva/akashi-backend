@@ -7,6 +7,7 @@ import {
   UseGuards,
   Req,
   Res,
+  ConflictException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,43 +37,45 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(@Req() req, @Res() res) {
     try {
-      console.log(req.user);
-
       const result = await this.authService.handleSocialLogin(
         req.user,
         'google',
       );
 
-      // No controller, dentro do googleAuthCallback
       const html = `
-          <html>
-            <script>
-              window.opener.postMessage({
-                type: 'oauth-success',
-                payload: {
-                  accessToken: ${JSON.stringify(result.accessToken)},
-                  refreshToken: ${JSON.stringify(result.refreshToken)},
-                  user: {
-                    id: ${JSON.stringify(result.id)},
-                    email: ${JSON.stringify(result.email)},
-                    fullName: ${JSON.stringify(result.fullName)},
-                    photo: ${JSON.stringify(result.photo)}
-                  }
-                }
-              }, '${process.env.FRONTEND_URL}');
-              window.close();
-            </script>
-          </html>
-          `;
-
+        <html>
+          <script>
+            window.opener.postMessage({
+              type: 'oauth-success',
+              payload: ${JSON.stringify({
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                user: {
+                  id: result.id,
+                  email: result.email,
+                  fullName: result.fullName,
+                  photo: result.photo,
+                },
+              })}
+            }, '${process.env.FRONTEND_URL}');
+            window.close();
+          </script>
+        </html>
+      `;
       res.send(html);
     } catch (error) {
+      // Captura mensagem específica do erro
+      const errorMessage =
+        error instanceof ConflictException
+          ? error.message
+          : 'Falha no login do Google';
+
       const html = `
         <html>
           <script>
             window.opener.postMessage({
               type: 'oauth-error',
-              payload: { message: 'Google login failed' }
+              payload: { message: ${JSON.stringify(errorMessage)} }
             }, '${process.env.FRONTEND_URL}');
             window.close();
           </script>
@@ -94,47 +97,50 @@ export class AuthController {
   @UseGuards(AuthGuard('github'))
   async githubAuthCallback(@Req() req, @Res() res) {
     try {
-      console.log('req User', req.user);
       const result = await this.authService.handleSocialLogin(
         req.user,
         'github',
       );
 
       const html = `
-          <html>
-            <script>
-              window.opener.postMessage({
-                type: 'oauth-success',
-                payload: ${JSON.stringify({
-                  accessToken: result.accessToken,
-                  refreshToken: result.refreshToken,
-                  user: {
-                    id: result.id,
-                    email: result.email,
-                    fullName: result.fullName,
-                    photo: result.photo,
-                  },
-                })}
-              }, '${process.env.FRONTEND_URL}');
-              window.close();
-            </script>
-          </html>
-
-    `;
-
+        <html>
+          <script>
+            window.opener.postMessage({
+              type: 'oauth-success',
+              payload: ${JSON.stringify({
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                user: {
+                  id: result.id,
+                  email: result.email,
+                  fullName: result.fullName,
+                  photo: result.photo,
+                },
+              })}
+            }, '${process.env.FRONTEND_URL}');
+            window.close();
+          </script>
+        </html>
+      `;
       res.send(html);
     } catch (error) {
+      // Captura mensagem específica do erro
+      const errorMessage =
+        error instanceof ConflictException
+          ? error.message
+          : 'Falha no login do GitHub';
+
       const html = `
-      <html>
-        <script>
-          window.opener.postMessage({
-            type: 'oauth-error',
-            payload: { message: 'GitHub login failed' }
-          }, '${process.env.FRONTEND_URL}');
-          window.close();
-        </script>
-      </html>
-    `;
+        <html>
+          <script>
+            window.opener.postMessage({
+              type: 'oauth-error',
+              payload: { message: ${JSON.stringify(errorMessage)} }
+            }, '${process.env.FRONTEND_URL}');
+            window.close();
+          </script>
+        </html>
+      `;
       res.send(html);
     }
   }
