@@ -78,6 +78,7 @@ export class GitHubAuthStrategy extends PassportStrategy(
     profile: GitHubProfile,
   ) {
     // Obter emails (lógica robusta)
+    console.log('Profilssse:', profile);
     let emails = profile.emails || [];
 
     if (!emails.length || !emails.some((e) => e.verified)) {
