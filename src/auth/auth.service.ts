@@ -114,6 +114,8 @@ export class AuthService {
   }
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
+    console.log('Profile:', profile);
+
     console.log('Dados do Perfil:', {
       email: profile.email,
       displayName: profile.displayName,
