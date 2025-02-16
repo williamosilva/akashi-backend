@@ -38,8 +38,16 @@ export class AuthService {
     const { email, password, fullName } = registerDto;
 
     const existingUser = await this.userModel.findOne({ email });
+
+    // Verifica se o email já está registrado com outro provider
     if (existingUser) {
-      throw new UnauthorizedException('Email already registered');
+      if (existingUser.provider !== 'local') {
+        throw new UnauthorizedException(
+          `Este email já está registrado via ${existingUser.provider}. Faça login usando ${existingUser.provider}.`,
+        );
+      } else {
+        throw new UnauthorizedException('Email já registrado');
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -49,6 +57,7 @@ export class AuthService {
       password: hashedPassword,
       fullName,
       plan: 'free',
+      provider: 'local', // Adicione esta linha para marcar o provider
     });
 
     const tokens = await this.generateTokens(user.id, user.email);
@@ -64,21 +73,33 @@ export class AuthService {
     const { email, password } = loginDto;
 
     const user = await this.userModel.findOne({ email });
+
+    // Verifica se o usuário existe
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password || '');
+    // Verifica se o usuário não é local
+    if (user.provider !== 'local') {
+      throw new UnauthorizedException(
+        `Esta conta está registrada via ${user.provider}. Faça login usando ${user.provider}.`,
+      );
+    }
+
+    // Verifica se a senha está definida
+    if (!user.password) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
 
     return {
       id: user.id,
-      // email: user.email,
-      // fullName: user.fullName,
       ...tokens,
     };
   }
