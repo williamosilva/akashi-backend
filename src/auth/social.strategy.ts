@@ -77,32 +77,44 @@ export class GitHubAuthStrategy extends PassportStrategy(
     refreshToken: string,
     profile: GitHubProfile,
   ) {
-    // Obter emails (lógica robusta)
-    console.log('Profilssse:', profile);
     let emails = profile.emails || [];
 
+    // Passo 1: Buscar emails via API se necessário
     if (!emails.length || !emails.some((e) => e.verified)) {
       try {
         const emailResponse = await fetch(
           'https://api.github.com/user/emails',
           { headers: { Authorization: `token ${accessToken}` } },
         );
-        const emailData = await emailResponse.json();
+        const emailData: Array<{
+          email: string;
+          verified: boolean;
+          primary: boolean;
+        }> = await emailResponse.json();
+
+        // Mapear para o formato { value, verified, primary }
         emails = emailData
-          .filter((email: any) => email.verified)
-          .sort((a: any, b: any) =>
-            a.primary === b.primary ? 0 : a.primary ? -1 : 1,
-          );
+          .filter((email) => email.verified)
+          .sort((a, b) => (a.primary === b.primary ? 0 : a.primary ? -1 : 1))
+          .map((email) => ({
+            value: email.email, // ← Corrigir mapeamento aqui
+            verified: email.verified,
+            primary: email.primary,
+          }));
       } catch (error) {
         console.error('Failed to fetch GitHub emails:', error);
       }
     }
 
-    // Mapeamento correto (igual ao Google)
+    // Passo 2: Selecionar o email corretamente
+    const primaryEmail =
+      emails.find((e) => e.primary)?.value ||
+      emails[0]?.value ||
+      `${profile.id}@github.social`;
+
     return {
       id: profile.id,
-      email: emails[0]?.value || `${profile.id}@github.social`,
-      // ← Campo padronizado
+      email: primaryEmail, // ← Usar email primário/verificado
       displayName:
         profile.displayName ||
         profile._json?.name ||
