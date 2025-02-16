@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -109,7 +114,7 @@ export class AuthService {
   }
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
-    console.log('Dados do Perfil (GitHub):', {
+    console.log('Dados do Perfil:', {
       email: profile.email,
       displayName: profile.displayName,
       photo: profile.photo,
@@ -117,23 +122,28 @@ export class AuthService {
 
     try {
       const email = profile.email || `${profile.id}@${provider}.social`;
-
       let user = await this.userModel.findOne({ email });
+
+      // Verifica se existe usuário com mesmo email mas provider diferente
+      if (user && user.provider !== provider) {
+        throw new ConflictException(
+          `Este email já está associado a uma conta ${user.provider}. Por favor, faça login usando ${user.provider}.`,
+        );
+      }
 
       // Criar ou atualizar usuário
       if (!user) {
         user = await this.userModel.create({
           email,
-          fullName: profile.displayName, // Usa displayName do perfil
+          fullName: profile.displayName,
           provider,
           providerId: profile.id,
           photo: profile.photo,
           plan: 'free',
         });
       } else {
-        // Atualiza dados mesmo se o provider for o mesmo
-        user.fullName = profile.displayName; // ← Atualiza sempre
-        user.provider = provider;
+        // Atualiza dados apenas se o provider for o mesmo
+        user.fullName = profile.displayName;
         user.providerId = profile.id;
         if (profile.photo) user.photo = profile.photo;
         await user.save();
@@ -149,11 +159,13 @@ export class AuthService {
         ...tokens,
       };
     } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
       console.error('Error in handleSocialLogin:', error);
-      throw error;
+      throw new InternalServerErrorException('Erro ao processar login social');
     }
   }
-
   async refreshTokens(userId: string, email: string) {
     return this.generateTokens(userId, email);
   }
