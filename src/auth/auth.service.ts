@@ -109,31 +109,38 @@ export class AuthService {
   }
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
+    console.log('Dados do Perfil (GitHub):', {
+      email: profile.email,
+      displayName: profile.displayName,
+      photo: profile.photo,
+    });
+
     try {
       const email = profile.email || `${profile.id}@${provider}.social`;
 
       let user = await this.userModel.findOne({ email });
 
+      // Criar ou atualizar usuário
       if (!user) {
         user = await this.userModel.create({
           email,
-          fullName: profile.displayName,
+          fullName: profile.displayName, // Usa displayName do perfil
           provider,
           providerId: profile.id,
           photo: profile.photo,
           plan: 'free',
         });
-      } else if (user.provider !== provider) {
+      } else {
+        // Atualiza dados mesmo se o provider for o mesmo
+        user.fullName = profile.displayName; // ← Atualiza sempre
         user.provider = provider;
         user.providerId = profile.id;
-        if (profile.photo) {
-          user.photo = profile.photo;
-        }
+        if (profile.photo) user.photo = profile.photo;
         await user.save();
       }
 
+      // Gerar tokens e retornar
       const tokens = await this.generateTokens(user.id, user.email);
-
       return {
         id: user.id,
         email: user.email,

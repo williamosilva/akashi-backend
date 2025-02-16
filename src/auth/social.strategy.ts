@@ -57,6 +57,7 @@ export class GoogleAuthStrategy extends PassportStrategy(
   }
 }
 
+// social.strategy.ts (GitHub Strategy)
 @Injectable()
 export class GitHubAuthStrategy extends PassportStrategy(
   GitHubStrategy,
@@ -76,18 +77,15 @@ export class GitHubAuthStrategy extends PassportStrategy(
     refreshToken: string,
     profile: GitHubProfile,
   ) {
-    // Obter emails de forma mais robusta
+    // Obter emails (lógica robusta)
     let emails = profile.emails || [];
 
-    if ((!emails.length || !emails.some((e) => e.verified)) && accessToken) {
+    if (!emails.length || !emails.some((e) => e.verified)) {
       try {
         const emailResponse = await fetch(
           'https://api.github.com/user/emails',
-          {
-            headers: { Authorization: `token ${accessToken}` },
-          },
+          { headers: { Authorization: `token ${accessToken}` } },
         );
-
         const emailData = await emailResponse.json();
         emails = emailData
           .filter((email: any) => email.verified)
@@ -99,21 +97,17 @@ export class GitHubAuthStrategy extends PassportStrategy(
       }
     }
 
-    // Obter nome completo
-    const displayName =
-      profile.displayName ||
-      profile._json?.name ||
-      profile.username ||
-      'Usuário GitHub';
-
-    // Obter foto do perfil
-    const photo = profile.photos?.[0]?.value || profile._json?.avatar_url || '';
-
+    // Mapeamento correto (igual ao Google)
     return {
       id: profile.id,
       email: emails[0]?.value || `${profile.id}@github.social`,
-      fullName: displayName,
-      photo: photo,
+      // ← Campo padronizado
+      displayName:
+        profile.displayName ||
+        profile._json?.name ||
+        profile.username ||
+        'Usuário GitHub',
+      photo: profile.photos?.[0]?.value || profile._json?.avatar_url || '',
       provider: 'github',
     };
   }
