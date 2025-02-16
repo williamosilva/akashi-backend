@@ -68,7 +68,7 @@ export class AuthController {
       const errorMessage =
         error instanceof ConflictException
           ? error.message
-          : 'Falha no login do Google';
+          : 'Google login failed';
 
       const html = `
         <html>
@@ -128,7 +128,7 @@ export class AuthController {
       const errorMessage =
         error instanceof ConflictException
           ? error.message
-          : 'Falha no login do GitHub';
+          : 'GitHub login failed';
 
       const html = `
         <html>

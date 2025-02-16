@@ -155,7 +155,7 @@ export class AuthService {
         // Se encontrou um usuário com este email, verifica se o provider é diferente
         if (existingUser.provider !== provider) {
           throw new ConflictException(
-            `Este email já está associado a uma conta ${existingUser.provider}. Por favor, faça login usando ${existingUser.provider}.`,
+            `This email is already associated with an account ${existingUser.provider}. Please log in using ${existingUser.provider}.`,
           );
         }
 
@@ -201,7 +201,7 @@ export class AuthService {
         throw error;
       }
       console.error('Error in handleSocialLogin:', error);
-      throw new InternalServerErrorException('Erro ao processar login social');
+      throw new InternalServerErrorException('Error processing social login');
     }
   }
   async refreshTokens(userId: string, email: string) {
