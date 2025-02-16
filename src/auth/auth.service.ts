@@ -122,40 +122,55 @@ export class AuthService {
 
     try {
       const email = profile.email || `${profile.id}@${provider}.social`;
-      let user = await this.userModel.findOne({ email });
 
-      // Verifica se existe usuário com mesmo email mas provider diferente
-      if (user && user.provider !== provider) {
-        throw new ConflictException(
-          `Este email já está associado a uma conta ${user.provider}. Por favor, faça login usando ${user.provider}.`,
+      // Primeiro, procura por qualquer usuário com este email, independente do provider
+      const existingUser = await this.userModel.findOne({
+        email: email,
+      });
+
+      if (existingUser) {
+        // Se encontrou um usuário com este email, verifica se o provider é diferente
+        if (existingUser.provider !== provider) {
+          throw new ConflictException(
+            `Este email já está associado a uma conta ${existingUser.provider}. Por favor, faça login usando ${existingUser.provider}.`,
+          );
+        }
+
+        // Se chegou aqui, o provider é o mesmo, então atualiza os dados
+        existingUser.fullName = profile.displayName;
+        existingUser.providerId = profile.id;
+        if (profile.photo) existingUser.photo = profile.photo;
+        await existingUser.save();
+
+        const tokens = await this.generateTokens(
+          existingUser.id,
+          existingUser.email,
         );
+        return {
+          id: existingUser.id,
+          email: existingUser.email,
+          fullName: existingUser.fullName,
+          photo: existingUser.photo,
+          ...tokens,
+        };
       }
 
-      // Criar ou atualizar usuário
-      if (!user) {
-        user = await this.userModel.create({
-          email,
-          fullName: profile.displayName,
-          provider,
-          providerId: profile.id,
-          photo: profile.photo,
-          plan: 'free',
-        });
-      } else {
-        // Atualiza dados apenas se o provider for o mesmo
-        user.fullName = profile.displayName;
-        user.providerId = profile.id;
-        if (profile.photo) user.photo = profile.photo;
-        await user.save();
-      }
+      // Se não encontrou usuário, cria um novo
+      const newUser = await this.userModel.create({
+        email,
+        fullName: profile.displayName,
+        provider,
+        providerId: profile.id,
+        photo: profile.photo,
+        plan: 'free',
+      });
 
-      // Gerar tokens e retornar
-      const tokens = await this.generateTokens(user.id, user.email);
+      const tokens = await this.generateTokens(newUser.id, newUser.email);
       return {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        photo: user.photo,
+        id: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        photo: newUser.photo,
         ...tokens,
       };
     } catch (error) {
