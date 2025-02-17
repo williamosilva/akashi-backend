@@ -299,7 +299,10 @@ export class ProjectsService {
       throw new NotFoundException('User not found');
     }
 
-    const projects = await this.projectModel.find({ user: userObjectId });
+    const projects = await this.projectModel
+      .find({ user: userObjectId })
+      .select('name _id')
+      .lean();
 
     if (!projects.length) {
       throw new NotFoundException('No projects found for this user');
