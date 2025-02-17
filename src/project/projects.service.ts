@@ -139,7 +139,7 @@ export class ProjectsService {
 
     const project = await this.projectModel
       .findById(projectId)
-      .select('dataInfo');
+      .select('name dataInfo');
 
     if (!project) {
       throw new NotFoundException('Project not found');
@@ -198,7 +198,10 @@ export class ProjectsService {
       await project.save();
     }
 
-    return project.dataInfo;
+    return {
+      name: project.name,
+      dataInfo: project.dataInfo,
+    };
   }
 
   async updateProjectDataInfo(
