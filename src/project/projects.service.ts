@@ -21,182 +21,121 @@ export class ProjectsService {
     @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
+  private generateObjectId(): string {
+    return new Types.ObjectId().toHexString();
+  }
+
+  private async processApiIntegration(entry: any) {
+    if (entry.apiUrl) {
+      try {
+        const apiKeyEntry = Object.entries(entry).find(
+          ([k]) =>
+            !['apiUrl', 'JSONPath', 'dataReturn', 'objectId'].includes(k),
+        );
+
+        const headers = new AxiosHeaders();
+        if (apiKeyEntry) {
+          headers.set(apiKeyEntry[0], String(apiKeyEntry[1]));
+        }
+
+        const apiResponse = await axios.get(entry.apiUrl, { headers });
+        let dataReturn;
+
+        if (entry.JSONPath) {
+          try {
+            const results = jsonpath.query(apiResponse.data, entry.JSONPath);
+            dataReturn =
+              results.length > 0
+                ? results[0]
+                : `No data found for JSONPath: "${entry.JSONPath}"`;
+          } catch (error) {
+            dataReturn = `Invalid JSONPath: "${entry.JSONPath}". Error: ${error.message}`;
+          }
+        } else {
+          dataReturn = apiResponse.data;
+        }
+
+        return { ...entry, dataReturn };
+      } catch (error) {
+        console.error(`Error fetching API (${entry.apiUrl}):`, error.message);
+        return { ...entry, dataReturn: `Error: ${error.message}` };
+      }
+    }
+    return entry;
+  }
+
   async createProject(userId: string, createProjectDto: CreateProjectDto) {
     if (!Types.ObjectId.isValid(userId)) {
       throw new BadRequestException('Invalid user ID');
     }
 
     const userObjectId = new Types.ObjectId(userId);
-
     const user = await this.userModel.findById(userObjectId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
+
+    // Garante que user.plan tenha um valor válido
+    const userPlan = user.plan ?? 'free';
 
     const existingProjectsCount = await this.projectModel.countDocuments({
       user: userObjectId,
     });
+    this.checkUserPlan(userPlan, existingProjectsCount);
 
-    switch (user.plan) {
-      case 'admin':
-        break;
-      case 'basic':
-        if (existingProjectsCount >= 5) {
-          throw new ConflictException('Pro users can create up to 5 projects');
-        }
-        break;
-      case 'premium':
-        if (existingProjectsCount >= 10) {
-          throw new ConflictException(
-            'Premium users can create up to 10 projects',
-          );
-        }
-        break;
-      default:
-        if (existingProjectsCount >= 1) {
-          throw new ConflictException('Free users can only create 1 project');
-        }
-    }
-
+    const processedDataInfo: Record<string, any> = {};
     if (createProjectDto.dataInfo) {
       const hasExternalApi = Object.values(createProjectDto.dataInfo).some(
-        (value) => typeof value === 'object' && value.apiUrl,
+        (value) => typeof value === 'object' && 'apiUrl' in value,
       );
 
-      if (hasExternalApi && user.plan !== 'premium' && user.plan !== 'admin') {
+      if (hasExternalApi && !['premium', 'admin'].includes(userPlan)) {
         throw new ForbiddenException(
-          'External API integration is only available for Premium users',
+          'External API integration requires Premium plan',
         );
       }
 
-      if (
-        (user.plan === 'premium' || user.plan === 'admin') &&
-        hasExternalApi
-      ) {
-        for (const [key, value] of Object.entries(createProjectDto.dataInfo)) {
-          if (typeof value === 'object' && value.apiUrl) {
-            try {
-              const apiKeyEntry = Object.entries(value).find(
-                ([k]) => !['apiUrl', 'JSONPath', 'dataReturn'].includes(k),
-              );
+      for (const [key, value] of Object.entries(createProjectDto.dataInfo)) {
+        const objectId = this.generateObjectId();
+        let entry = { ...value, objectId };
 
-              const headers = new AxiosHeaders();
-              if (apiKeyEntry) {
-                headers.set(apiKeyEntry[0], String(apiKeyEntry[1]));
-              }
-
-              const apiResponse = await axios.get(value.apiUrl, { headers });
-              let dataReturn;
-
-              if (value.JSONPath) {
-                try {
-                  const results = jsonpath.query(
-                    apiResponse.data,
-                    value.JSONPath,
-                  );
-                  dataReturn =
-                    results.length > 0
-                      ? results[0]
-                      : `No data found for JSONPath expression: "${value.JSONPath}"`;
-                } catch (jsonPathError) {
-                  dataReturn = `Invalid JSONPath expression: "${value.JSONPath}". Error: ${jsonPathError.message}`;
-                }
-              } else {
-                dataReturn = apiResponse.data;
-              }
-
-              createProjectDto.dataInfo[key] = {
-                ...value,
-                dataReturn,
-              };
-            } catch (error) {
-              console.error(
-                `Error fetching data from API (${value.apiUrl}):`,
-                error.message,
-              );
-              createProjectDto.dataInfo[key] = {
-                ...value,
-                dataReturn: `Error fetching data: ${error.message}`,
-              };
-            }
-          }
+        if (typeof value === 'object' && value.apiUrl) {
+          entry = await this.processApiIntegration(entry);
         }
+
+        processedDataInfo[key] = entry;
       }
     }
 
     const newProject = new this.projectModel({
       ...createProjectDto,
+      dataInfo: processedDataInfo,
       user: userObjectId,
     });
 
-    return await newProject.save();
+    return newProject.save();
+  }
+
+  private checkUserPlan(plan: string, count: number) {
+    const limits = { default: 1, basic: 5, premium: 10 };
+    const limit = limits[plan] || limits.default;
+    if (count >= limit) {
+      throw new ConflictException(
+        `Plan ${plan} allows up to ${limit} projects`,
+      );
+    }
   }
 
   async getProjectDataInfo(projectId: string) {
-    if (!Types.ObjectId.isValid(projectId)) {
-      throw new BadRequestException('Invalid project ID');
-    }
+    const project = await this.validateProject(projectId);
+    const dataInfo = project.dataInfo || {};
 
-    const project = await this.projectModel
-      .findById(projectId)
-      .select('name dataInfo');
-
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    if (project.dataInfo) {
-      for (const [key, value] of Object.entries(project.dataInfo)) {
-        if (typeof value === 'object' && value.apiUrl) {
-          try {
-            const apiKeyEntry = Object.entries(value).find(
-              ([k]) => !['apiUrl', 'JSONPath', 'dataReturn'].includes(k),
-            );
-
-            const headers = new AxiosHeaders();
-            if (apiKeyEntry) {
-              headers.set(apiKeyEntry[0], String(apiKeyEntry[1]));
-            }
-
-            const apiResponse = await axios.get(value.apiUrl, { headers });
-            let dataReturn;
-
-            if (value.JSONPath) {
-              try {
-                const results = jsonpath.query(
-                  apiResponse.data,
-                  value.JSONPath,
-                );
-                dataReturn =
-                  results.length > 0
-                    ? results[0]
-                    : `No data found for JSONPath expression: "${value.JSONPath}"`;
-              } catch (jsonPathError) {
-                dataReturn = `Invalid JSONPath expression: "${value.JSONPath}". Error: ${jsonPathError.message}`;
-              }
-            } else {
-              dataReturn = apiResponse.data;
-            }
-
-            project.dataInfo[key] = {
-              ...value,
-              dataReturn,
-            };
-          } catch (error) {
-            console.error(
-              `Error fetching data from API (${value.apiUrl}):`,
-              error.message,
-            );
-            project.dataInfo[key] = {
-              ...value,
-              dataReturn: `Error fetching data: ${error.message}`,
-            };
-          }
-        }
+    for (const [objectId, entry] of Object.entries(dataInfo)) {
+      if (entry['apiUrl']) {
+        dataInfo[objectId] = await this.processApiIntegration(entry);
       }
-
-      await project.save();
     }
+
+    project.dataInfo = dataInfo;
+    await project.save();
 
     return {
       name: project.name,
@@ -208,72 +147,41 @@ export class ProjectsService {
     projectId: string,
     updateProjectDto: UpdateProjectDto,
   ) {
+    const project = await this.validateProject(projectId);
+    const currentDataInfo = project.dataInfo || {};
+
+    if (updateProjectDto.dataInfo) {
+      for (const [key, entry] of Object.entries(updateProjectDto.dataInfo)) {
+        let processedEntry = entry;
+
+        // Gera novo ID se for uma nova entrada
+        const objectId =
+          currentDataInfo[key]?.objectId || this.generateObjectId();
+
+        if (entry.apiUrl) {
+          processedEntry = await this.processApiIntegration({
+            ...entry,
+            objectId,
+          });
+        }
+
+        currentDataInfo[key] = { ...processedEntry, objectId };
+      }
+
+      project.dataInfo = currentDataInfo;
+      await project.save();
+    }
+
+    return project;
+  }
+
+  private async validateProject(projectId: string) {
     if (!Types.ObjectId.isValid(projectId)) {
       throw new BadRequestException('Invalid project ID');
     }
-
-    if (updateProjectDto.dataInfo) {
-      for (const [key, value] of Object.entries(updateProjectDto.dataInfo)) {
-        if (typeof value === 'object' && value.apiUrl) {
-          try {
-            const apiKeyEntry = Object.entries(value).find(
-              ([k]) => !['apiUrl', 'JSONPath', 'dataReturn'].includes(k),
-            );
-
-            const headers = new AxiosHeaders();
-            if (apiKeyEntry) {
-              headers.set(apiKeyEntry[0], String(apiKeyEntry[1]));
-            }
-
-            const apiResponse = await axios.get(value.apiUrl, { headers });
-            let dataReturn;
-
-            if (value.JSONPath) {
-              try {
-                const results = jsonpath.query(
-                  apiResponse.data,
-                  value.JSONPath,
-                );
-                dataReturn =
-                  results.length > 0
-                    ? results[0]
-                    : `No data found for JSONPath expression: "${value.JSONPath}"`;
-              } catch (jsonPathError) {
-                dataReturn = `Invalid JSONPath expression: "${value.JSONPath}". Error: ${jsonPathError.message}`;
-              }
-            } else {
-              dataReturn = apiResponse.data;
-            }
-
-            updateProjectDto.dataInfo[key] = {
-              ...value,
-              dataReturn,
-            };
-          } catch (error) {
-            console.error(
-              `Error fetching data from API (${value.apiUrl}):`,
-              error.message,
-            );
-            updateProjectDto.dataInfo[key] = {
-              ...value,
-              dataReturn: `Error fetching data: ${error.message}`,
-            };
-          }
-        }
-      }
-    }
-
-    const updatedProject = await this.projectModel.findByIdAndUpdate(
-      projectId,
-      { $set: updateProjectDto },
-      { new: true, runValidators: true },
-    );
-
-    if (!updatedProject) {
-      throw new NotFoundException('Project not found');
-    }
-
-    return updatedProject;
+    const project = await this.projectModel.findById(projectId);
+    if (!project) throw new NotFoundException('Project not found');
+    return project;
   }
 
   async deleteProject(projectId: string) {

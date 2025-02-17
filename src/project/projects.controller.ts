@@ -31,42 +31,32 @@ export class ProjectsController {
     description: 'Project created successfully',
     schema: {
       example: {
+        _id: '663d1a5e8a9f6a4d9f4c7b1c',
         name: 'Marketing Project',
         userId: '60d5ecbdxx54b3b2c001f3e1234',
         dataInfo: {
-          title: 'I am a Title',
-          subtitle: 'I am a Subtitle',
+          orcamento: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b1d',
+            valor: 50000,
+            moeda: 'BRL',
+          },
+          apiIntegracao: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b1e',
+            apiUrl: 'https://api.example.com/data',
+            JSONPath: '$..results',
+            dataReturn: { results: [] },
+          },
         },
       },
     },
   })
   @ApiResponse({
-    status: 400,
-    description: 'User ID not provided',
+    status: 403,
+    description: 'External API integration requires Premium plan',
     schema: {
       example: {
-        statusCode: 400,
-        message: 'User ID is required',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'User not found',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'User already has a project',
-    schema: {
-      example: {
-        statusCode: 409,
-        message: 'User already has a registered project',
+        statusCode: 403,
+        message: 'External API integration requires Premium plan',
       },
     },
   })
@@ -77,6 +67,7 @@ export class ProjectsController {
     }
     return this.projectsService.createProject(userId, projectData);
   }
+
   @Get(':projectId/datainfo')
   @ApiOperation({ summary: 'Get project dataInfo by project ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
@@ -85,18 +76,19 @@ export class ProjectsController {
     description: 'Project information returned successfully',
     schema: {
       example: {
-        title: 'Updated Project',
-        subtitle: 'Project Details',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid project ID',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Invalid project ID',
+        name: 'Marketing Project',
+        dataInfo: {
+          metrics: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b1f',
+            visits: 1500,
+            conversions: 45,
+          },
+          apiData: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b1e',
+            apiUrl: 'https://api.example.com/data',
+            dataReturn: { results: [] },
+          },
+        },
       },
     },
   })
@@ -116,18 +108,17 @@ export class ProjectsController {
     description: 'Project information updated successfully',
     schema: {
       example: {
-        title: 'Updated Project',
-        subtitle: 'New project details',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid project ID',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Invalid project ID',
+        dataInfo: {
+          orcamento: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b1d',
+            valor: 75000,
+            moeda: 'BRL',
+          },
+          newField: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b20',
+            notes: 'Additional information',
+          },
+        },
       },
     },
   })
@@ -142,47 +133,24 @@ export class ProjectsController {
   }
 
   @Get('user/:userId')
-  @ApiOperation({ summary: 'Get project by User ID' })
+  @ApiOperation({ summary: 'Get projects by User ID' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({
     status: 200,
-    description: 'Project found successfully',
+    description: 'Projects found successfully',
     schema: {
-      example: {
-        _id: '60d5ecb54b3xxb2c001f3e123',
-        name: 'Project Name',
-        description: 'Project Description',
-        dataInfo: {
-          key1: {
-            apiUrl: 'https://api.example.com/data',
-            JSONPath: 'data',
-            dataReturn: 'API Response Data',
+      example: [
+        {
+          _id: '60d5ecb54b3xxb2c001f3e123',
+          name: 'Project Name',
+          dataInfo: {
+            budget: {
+              objectId: '663d1a5e8a9f6a4d9f4c7b1d',
+              total: 50000,
+            },
           },
         },
-        user: '60d5ecb54b3xxb2c001f3e124',
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid User ID',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Invalid user ID',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found or No project found for this user',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'No project found for this user',
-      },
+      ],
     },
   })
   async getProjectByUser(@Param('userId') userId: string) {
@@ -191,23 +159,12 @@ export class ProjectsController {
 
   @Delete(':projectId')
   @ApiOperation({ summary: 'Delete project by ID' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
     status: 200,
     description: 'Project deleted successfully',
     schema: {
       example: {
         message: 'Project deleted successfully',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid Project ID',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Invalid Project ID',
       },
     },
   })
