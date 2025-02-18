@@ -49,11 +49,13 @@ export class ProjectsController {
             valor: 50000,
             moeda: 'BRL',
           },
-          apiIntegracao: {
+          cliente: {
             objectId: '663d1a5e8a9f6a4d9f4c7b1e',
-            apiUrl: 'https://api.example.com/data',
-            JSONPath: '$..results',
-            dataReturn: { results: [] },
+            apiIntegration: {
+              apiUrl: 'https://api.example.com/cliente',
+              JSONPath: '$.store.book[0].client',
+              x_api_key: 'your-api-key-here',
+            },
           },
         },
       },
@@ -87,15 +89,22 @@ export class ProjectsController {
       example: {
         name: 'Marketing Project',
         dataInfo: {
-          metrics: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b1f',
-            visits: 1500,
-            conversions: 45,
+          orcamento: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b1d',
+            valor: 50000,
+            moeda: 'BRL',
           },
-          apiData: {
+          cliente: {
             objectId: '663d1a5e8a9f6a4d9f4c7b1e',
-            apiUrl: 'https://api.example.com/data',
-            dataReturn: { results: [] },
+            apiIntegration: {
+              apiUrl: 'https://api.example.com/cliente',
+              JSONPath: '$.store.book[0].client',
+              x_api_key: 'your-api-key-here',
+              dataReturn: {
+                nome: 'Cliente Exemplo',
+                email: 'cliente@example.com',
+              },
+            },
           },
         },
       },
@@ -111,17 +120,47 @@ export class ProjectsController {
   @ApiBody({
     description: 'Data for project update',
     type: UpdateProjectDto,
+    schema: {
+      example: {
+        dataInfo: {
+          orcamento: {
+            valor: 75000,
+            moeda: 'BRL',
+          },
+          cliente: {
+            apiIntegration: {
+              apiUrl: 'https://api.example.com/cliente/updated',
+              JSONPath: '$.store.book[0].client',
+              x_api_key: 'updated-api-key',
+            },
+          },
+          newField: {
+            notes: 'Additional information',
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
     description: 'Project information updated successfully',
     schema: {
       example: {
+        _id: '663d1a5e8a9f6a4d9f4c7b1c',
+        name: 'Marketing Project',
         dataInfo: {
           orcamento: {
             objectId: '663d1a5e8a9f6a4d9f4c7b1d',
             valor: 75000,
             moeda: 'BRL',
+          },
+          cliente: {
+            objectId: '663d1a5e8a9f6a4d9f4c7b1e',
+            apiIntegration: {
+              apiUrl: 'https://api.example.com/cliente/updated',
+              JSONPath: '$.store.book[0].client',
+              x_api_key: 'updated-api-key',
+            },
           },
           newField: {
             objectId: '663d1a5e8a9f6a4d9f4c7b20',
@@ -150,8 +189,11 @@ export class ProjectsController {
     schema: {
       example: {
         valor: 85000,
-        apiUrl: 'https://api.new-example.com/data',
-        JSONPath: '$..newResults',
+        apiIntegration: {
+          apiUrl: 'https://api.new-example.com/data',
+          JSONPath: '$..newResults',
+          x_api_key: 'new-api-key',
+        },
       },
     },
   })
@@ -163,11 +205,17 @@ export class ProjectsController {
         _id: 'project123',
         name: 'Updated Project',
         dataInfo: {
-          budget: {
+          orcamento: {
             objectId: 'entry123',
             valor: 85000,
-            apiUrl: 'https://api.new-example.com/data',
-            dataReturn: { newResults: [] },
+          },
+          cliente: {
+            objectId: 'entry456',
+            apiIntegration: {
+              apiUrl: 'https://api.new-example.com/data',
+              JSONPath: '$..newResults',
+              x_api_key: 'new-api-key',
+            },
           },
         },
       },
@@ -196,12 +244,6 @@ export class ProjectsController {
         {
           _id: '60d5ecb54b3xxb2c001f3e123',
           name: 'Project Name',
-          dataInfo: {
-            budget: {
-              objectId: '663d1a5e8a9f6a4d9f4c7b1d',
-              total: 50000,
-            },
-          },
         },
       ],
     },
