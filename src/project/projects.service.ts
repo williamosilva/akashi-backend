@@ -25,35 +25,55 @@ export class ProjectsService {
     return new Types.ObjectId().toHexString();
   }
 
+  private isApiIntegrationObject(obj: any): boolean {
+    return obj && typeof obj === 'object' && 'apiUrl' in obj;
+  }
+
+  private findApiIntegrationKey(entry: any): string | null {
+    if (!entry || typeof entry !== 'object') return null;
+
+    for (const [key, value] of Object.entries(entry)) {
+      if (
+        this.isApiIntegrationObject(value) &&
+        !['dataReturn', 'objectId'].includes(key)
+      ) {
+        return key;
+      }
+    }
+    return null;
+  }
+
   private async processApiIntegration(entry: any) {
-    if (entry.apiIntegration && entry.apiIntegration.apiUrl) {
+    const apiIntegrationKey = this.findApiIntegrationKey(entry);
+
+    if (apiIntegrationKey && entry[apiIntegrationKey].apiUrl) {
       try {
         const config = {
           headers: new AxiosHeaders(),
         };
 
-        if (entry.apiIntegration.x_api_key) {
-          config.headers.set('x-api-key', entry.apiIntegration.x_api_key);
+        if (entry[apiIntegrationKey].x_api_key) {
+          config.headers.set('x-api-key', entry[apiIntegrationKey].x_api_key);
         }
 
         const apiResponse = await axios.get(
-          entry.apiIntegration.apiUrl,
+          entry[apiIntegrationKey].apiUrl,
           config,
         );
         let dataReturn;
 
-        if (entry.apiIntegration.JSONPath) {
+        if (entry[apiIntegrationKey].JSONPath) {
           try {
             const results = jsonpath.query(
               apiResponse.data,
-              entry.apiIntegration.JSONPath,
+              entry[apiIntegrationKey].JSONPath,
             );
             dataReturn =
               results.length > 0
                 ? results[0]
-                : `No data found for JSONPath: "${entry.apiIntegration.JSONPath}"`;
+                : `No data found for JSONPath: "${entry[apiIntegrationKey].JSONPath}"`;
           } catch (error) {
-            dataReturn = `Invalid JSONPath: "${entry.apiIntegration.JSONPath}". Error: ${error.message}`;
+            dataReturn = `Invalid JSONPath: "${entry[apiIntegrationKey].JSONPath}". Error: ${error.message}`;
           }
         } else {
           dataReturn = apiResponse.data;
@@ -61,20 +81,20 @@ export class ProjectsService {
 
         return {
           ...entry,
-          apiIntegration: {
-            ...entry.apiIntegration,
+          [apiIntegrationKey]: {
+            ...entry[apiIntegrationKey],
             dataReturn,
           },
         };
       } catch (error) {
         console.error(
-          `Error fetching API (${entry.apiIntegration.apiUrl}):`,
+          `Error fetching API (${entry[apiIntegrationKey].apiUrl}):`,
           error.message,
         );
         return {
           ...entry,
-          apiIntegration: {
-            ...entry.apiIntegration,
+          [apiIntegrationKey]: {
+            ...entry[apiIntegrationKey],
             dataReturn: `Error: ${error.message}`,
           },
         };
@@ -103,10 +123,12 @@ export class ProjectsService {
     const processedDataInfo: Record<string, any> = {};
     if (createProjectDto.dataInfo) {
       const hasExternalApi = Object.values(createProjectDto.dataInfo).some(
-        (value) =>
-          typeof value === 'object' &&
-          value.apiIntegration &&
-          value.apiIntegration.apiUrl,
+        (value) => {
+          if (typeof value !== 'object') return false;
+          return Object.values(value).some((subValue) =>
+            this.isApiIntegrationObject(subValue),
+          );
+        },
       );
 
       if (hasExternalApi && !['premium', 'admin'].includes(userPlan)) {
@@ -146,7 +168,7 @@ export class ProjectsService {
     const processedDataInfo = { ...dataInfo };
 
     for (const [key, entry] of Object.entries(dataInfo)) {
-      if (entry && entry.apiIntegration && entry.apiIntegration.apiUrl) {
+      if (this.findApiIntegrationKey(entry)) {
         processedDataInfo[key] = await this.processApiIntegration(entry);
       }
     }
@@ -177,13 +199,8 @@ export class ProjectsService {
       throw new NotFoundException('Entry not found with provided objectId');
     }
 
-    // Remove dataReturn if present in updateData.apiIntegration
-    if (
-      updateData.apiIntegration &&
-      'dataReturn' in updateData.apiIntegration
-    ) {
-      delete updateData.apiIntegration.dataReturn;
-    }
+    // Procurar e remover dataReturn de qualquer objeto de integração API
+    this.removeDataReturnFromApiIntegrations(updateData);
 
     // Atualizar dados mantendo o objectId existente
     let updatedEntry = {
@@ -199,6 +216,20 @@ export class ProjectsService {
     return project;
   }
 
+  private removeDataReturnFromApiIntegrations(data: any) {
+    if (!data || typeof data !== 'object') return;
+
+    for (const key in data) {
+      if (this.isApiIntegrationObject(data[key])) {
+        if ('dataReturn' in data[key]) {
+          delete data[key].dataReturn;
+        }
+      } else if (typeof data[key] === 'object') {
+        this.removeDataReturnFromApiIntegrations(data[key]);
+      }
+    }
+  }
+
   async updateProjectDataInfo(
     projectId: string,
     updateProjectDto: UpdateProjectDto,
@@ -208,10 +239,8 @@ export class ProjectsService {
 
     if (updateProjectDto.dataInfo) {
       for (const [key, entry] of Object.entries(updateProjectDto.dataInfo)) {
-        // Remove dataReturn if present in entry.apiIntegration
-        if (entry.apiIntegration && 'dataReturn' in entry.apiIntegration) {
-          delete entry.apiIntegration.dataReturn;
-        }
+        // Remove dataReturn de todos os objetos de integração API
+        this.removeDataReturnFromApiIntegrations(entry);
 
         // Gera novo ID se for uma nova entrada
         const objectId =
