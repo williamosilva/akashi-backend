@@ -143,6 +143,42 @@ export class ProjectsService {
     };
   }
 
+  async updateDataInfoEntry(
+    projectId: string,
+    objectId: string,
+    updateData: Record<string, any>,
+  ) {
+    const project = await this.validateProject(projectId);
+    const dataInfo = project.dataInfo || {};
+
+    // Encontrar a entrada pelo objectId
+    const entryKey = Object.keys(dataInfo).find(
+      (key) => dataInfo[key]?.objectId === objectId,
+    );
+
+    if (!entryKey) {
+      throw new NotFoundException('Entry not found with provided objectId');
+    }
+
+    // Atualizar dados mantendo o objectId existente
+    let updatedEntry = {
+      ...dataInfo[entryKey],
+      ...updateData,
+      objectId, // Garante que o ID não seja alterado
+    };
+
+    // Processar API se necessário
+    if (updatedEntry.apiUrl) {
+      updatedEntry = await this.processApiIntegration(updatedEntry);
+    }
+
+    dataInfo[entryKey] = updatedEntry;
+    project.dataInfo = dataInfo;
+
+    await project.save();
+    return project;
+  }
+
   async updateProjectDataInfo(
     projectId: string,
     updateProjectDto: UpdateProjectDto,

@@ -141,6 +141,50 @@ export class ProjectsController {
     );
   }
 
+  @Put(':projectId/datainfo/entry/:objectId')
+  @ApiOperation({ summary: 'Update specific entry in dataInfo by objectId' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'objectId', description: 'Object ID within dataInfo' })
+  @ApiBody({
+    description: 'Data to update the entry',
+    schema: {
+      example: {
+        valor: 85000,
+        apiUrl: 'https://api.new-example.com/data',
+        JSONPath: '$..newResults',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Entry updated successfully',
+    schema: {
+      example: {
+        _id: 'project123',
+        name: 'Updated Project',
+        dataInfo: {
+          budget: {
+            objectId: 'entry123',
+            valor: 85000,
+            apiUrl: 'https://api.new-example.com/data',
+            dataReturn: { newResults: [] },
+          },
+        },
+      },
+    },
+  })
+  async updateDataInfoEntry(
+    @Param('projectId') projectId: string,
+    @Param('objectId') objectId: string,
+    @Body() updateData: Record<string, any>,
+  ) {
+    return this.projectsService.updateDataInfoEntry(
+      projectId,
+      objectId,
+      updateData,
+    );
+  }
+
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get projects by User ID' })
   @ApiParam({ name: 'userId', description: 'User ID' })
