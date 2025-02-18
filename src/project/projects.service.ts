@@ -33,10 +33,7 @@ export class ProjectsService {
     if (!entry || typeof entry !== 'object') return null;
 
     for (const [key, value] of Object.entries(entry)) {
-      if (
-        this.isApiIntegrationObject(value) &&
-        !['dataReturn', 'objectId'].includes(key)
-      ) {
+      if (this.isApiIntegrationObject(value) && !['dataReturn'].includes(key)) {
         return key;
       }
     }
@@ -112,9 +109,7 @@ export class ProjectsService {
     const user = await this.userModel.findById(userObjectId);
     if (!user) throw new NotFoundException('User not found');
 
-    // Garante que user.plan tenha um valor válido
     const userPlan = user.plan ?? 'free';
-
     const existingProjectsCount = await this.projectModel.countDocuments({
       user: userObjectId,
     });
@@ -137,9 +132,11 @@ export class ProjectsService {
         );
       }
 
-      for (const [key, value] of Object.entries(createProjectDto.dataInfo)) {
-        const objectId = this.generateObjectId();
-        processedDataInfo[key] = { ...value, objectId };
+      for (const [originalKey, value] of Object.entries(
+        createProjectDto.dataInfo,
+      )) {
+        const newEntryId = this.generateObjectId();
+        processedDataInfo[newEntryId] = { [originalKey]: value };
       }
     }
 
@@ -167,9 +164,9 @@ export class ProjectsService {
     const dataInfo = project.dataInfo || {};
     const processedDataInfo = { ...dataInfo };
 
-    for (const [key, entry] of Object.entries(dataInfo)) {
+    for (const [entryId, entry] of Object.entries(dataInfo)) {
       if (this.findApiIntegrationKey(entry)) {
-        processedDataInfo[key] = await this.processApiIntegration(entry);
+        processedDataInfo[entryId] = await this.processApiIntegration(entry);
       }
     }
 
@@ -184,32 +181,24 @@ export class ProjectsService {
 
   async updateDataInfoEntry(
     projectId: string,
-    objectId: string,
+    entryId: string,
     updateData: Record<string, any>,
   ) {
     const project = await this.validateProject(projectId);
     const dataInfo = project.dataInfo || {};
 
-    // Encontrar a entrada pelo objectId
-    const entryKey = Object.keys(dataInfo).find(
-      (key) => dataInfo[key]?.objectId === objectId,
-    );
-
-    if (!entryKey) {
-      throw new NotFoundException('Entry not found with provided objectId');
+    if (!dataInfo[entryId]) {
+      throw new NotFoundException('Entry not found with provided ID');
     }
 
-    // Procurar e remover dataReturn de qualquer objeto de integração API
     this.removeDataReturnFromApiIntegrations(updateData);
 
-    // Atualizar dados mantendo o objectId existente
-    let updatedEntry = {
-      ...dataInfo[entryKey],
+    const updatedEntry = {
+      ...dataInfo[entryId],
       ...updateData,
-      objectId, // Garante que o ID não seja alterado
     };
 
-    dataInfo[entryKey] = updatedEntry;
+    dataInfo[entryId] = updatedEntry;
     project.dataInfo = dataInfo;
 
     await project.save();
@@ -238,15 +227,11 @@ export class ProjectsService {
     const currentDataInfo = project.dataInfo || {};
 
     if (updateProjectDto.dataInfo) {
-      for (const [key, entry] of Object.entries(updateProjectDto.dataInfo)) {
-        // Remove dataReturn de todos os objetos de integração API
-        this.removeDataReturnFromApiIntegrations(entry);
-
-        // Gera novo ID se for uma nova entrada
-        const objectId =
-          currentDataInfo[key]?.objectId || this.generateObjectId();
-
-        currentDataInfo[key] = { ...entry, objectId };
+      for (const [originalKey, value] of Object.entries(
+        updateProjectDto.dataInfo,
+      )) {
+        const newEntryId = this.generateObjectId();
+        currentDataInfo[newEntryId] = { [originalKey]: value };
       }
 
       project.dataInfo = currentDataInfo;
@@ -285,7 +270,6 @@ export class ProjectsService {
     }
 
     const userObjectId = new Types.ObjectId(userId);
-
     const userExists = await this.userModel.findById(userObjectId);
     if (!userExists) {
       throw new NotFoundException('User not found');

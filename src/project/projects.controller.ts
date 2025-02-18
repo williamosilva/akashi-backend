@@ -25,7 +25,6 @@ import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 @ApiTags('Projects')
 @Controller('projects')
 @UseGuards(JwtAuthGuard)
-// Adicionar esses decorators para exibir os ícones de autenticação no Swagger
 @ApiBearerAuth('access-token')
 @ApiBearerAuth('refresh-token')
 @ApiSecurity('secret-key')
@@ -44,14 +43,14 @@ export class ProjectsController {
         name: 'Marketing Project',
         userId: '60d5ecbdxx54b3b2c001f3e1234',
         dataInfo: {
-          orcamento: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b1d',
-            valor: 50000,
-            moeda: 'BRL',
+          '663d1a5e8a9f6a4d9f4c7b1d': {
+            orcamento: {
+              valor: 50000,
+              moeda: 'BRL',
+            },
           },
-          cliente: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b1e',
-            apiIntegration: {
+          '663d1a5e8a9f6a4d9f4c7b1e': {
+            integracaoexemplo: {
               apiUrl: 'https://api.example.com/cliente',
               JSONPath: '$.store.book[0].client',
               x_api_key: 'your-api-key-here',
@@ -64,12 +63,6 @@ export class ProjectsController {
   @ApiResponse({
     status: 403,
     description: 'External API integration requires Premium plan',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'External API integration requires Premium plan',
-      },
-    },
   })
   async createProject(@Body() createProjectDto: CreateProjectDto) {
     const { userId, ...projectData } = createProjectDto;
@@ -89,14 +82,14 @@ export class ProjectsController {
       example: {
         name: 'Marketing Project',
         dataInfo: {
-          orcamento: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b1d',
-            valor: 50000,
-            moeda: 'BRL',
+          '663d1a5e8a9f6a4d9f4c7b1d': {
+            orcamento: {
+              valor: 50000,
+              moeda: 'BRL',
+            },
           },
-          cliente: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b1e',
-            apiIntegration: {
+          '663d1a5e8a9f6a4d9f4c7b1e': {
+            integracaoexemplo: {
               apiUrl: 'https://api.example.com/cliente',
               JSONPath: '$.store.book[0].client',
               x_api_key: 'your-api-key-here',
@@ -117,30 +110,7 @@ export class ProjectsController {
   @Put(':projectId/datainfo')
   @ApiOperation({ summary: 'Update project dataInfo' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiBody({
-    description: 'Data for project update',
-    type: UpdateProjectDto,
-    schema: {
-      example: {
-        dataInfo: {
-          orcamento: {
-            valor: 75000,
-            moeda: 'BRL',
-          },
-          cliente: {
-            apiIntegration: {
-              apiUrl: 'https://api.example.com/cliente/updated',
-              JSONPath: '$.store.book[0].client',
-              x_api_key: 'updated-api-key',
-            },
-          },
-          newField: {
-            notes: 'Additional information',
-          },
-        },
-      },
-    },
-  })
+  @ApiBody({ type: UpdateProjectDto })
   @ApiResponse({
     status: 200,
     description: 'Project information updated successfully',
@@ -149,22 +119,23 @@ export class ProjectsController {
         _id: '663d1a5e8a9f6a4d9f4c7b1c',
         name: 'Marketing Project',
         dataInfo: {
-          orcamento: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b1d',
-            valor: 75000,
-            moeda: 'BRL',
+          '663d1a5e8a9f6a4d9f4c7b1d': {
+            orcamento: {
+              valor: 75000,
+              moeda: 'BRL',
+            },
           },
-          cliente: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b1e',
-            apiIntegration: {
+          '663d1a5e8a9f6a4d9f4c7b1e': {
+            integracaoexemplo: {
               apiUrl: 'https://api.example.com/cliente/updated',
               JSONPath: '$.store.book[0].client',
               x_api_key: 'updated-api-key',
             },
           },
-          newField: {
-            objectId: '663d1a5e8a9f6a4d9f4c7b20',
-            notes: 'Additional information',
+          '663d1a5e8a9f6a4d9f4c7b20': {
+            newField: {
+              notes: 'Additional information',
+            },
           },
         },
       },
@@ -180,16 +151,15 @@ export class ProjectsController {
     );
   }
 
-  @Put(':projectId/datainfo/entry/:objectId')
-  @ApiOperation({ summary: 'Update specific entry in dataInfo by objectId' })
+  @Put(':projectId/datainfo/entry/:entryId')
+  @ApiOperation({ summary: 'Update specific entry in dataInfo by entry ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'objectId', description: 'Object ID within dataInfo' })
+  @ApiParam({ name: 'entryId', description: 'Entry ID within dataInfo' })
   @ApiBody({
     description: 'Data to update the entry',
     schema: {
       example: {
-        valor: 85000,
-        apiIntegration: {
+        integracaoexemplo: {
           apiUrl: 'https://api.new-example.com/data',
           JSONPath: '$..newResults',
           x_api_key: 'new-api-key',
@@ -205,13 +175,13 @@ export class ProjectsController {
         _id: 'project123',
         name: 'Updated Project',
         dataInfo: {
-          orcamento: {
-            objectId: 'entry123',
-            valor: 85000,
+          entry123: {
+            orcamento: {
+              valor: 85000,
+            },
           },
-          cliente: {
-            objectId: 'entry456',
-            apiIntegration: {
+          entry456: {
+            integracaoexemplo: {
               apiUrl: 'https://api.new-example.com/data',
               JSONPath: '$..newResults',
               x_api_key: 'new-api-key',
@@ -223,12 +193,12 @@ export class ProjectsController {
   })
   async updateDataInfoEntry(
     @Param('projectId') projectId: string,
-    @Param('objectId') objectId: string,
+    @Param('entryId') entryId: string,
     @Body() updateData: Record<string, any>,
   ) {
     return this.projectsService.updateDataInfoEntry(
       projectId,
-      objectId,
+      entryId,
       updateData,
     );
   }
