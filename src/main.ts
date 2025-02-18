@@ -17,6 +17,7 @@ async function bootstrap() {
       'Authorization',
       'stripe-signature',
       'x-secret-key',
+      'Refresh-Token',
     ],
     credentials: true,
   });
@@ -28,6 +29,7 @@ async function bootstrap() {
       },
     }),
   );
+
   const config = new DocumentBuilder()
     .setTitle('Akashi API')
     .setDescription(
@@ -40,13 +42,75 @@ async function bootstrap() {
       'williamsilva20062005@gmail.com',
     )
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
+    // Adiciona configurações de autenticação
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'access-token',
+    )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Refresh-Token',
+        description: 'Enter refresh JWT token',
+        in: 'header',
+      },
+      'refresh-token',
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-secret-key',
+        in: 'header',
+        description: 'Enter secret key',
+      },
+      'secret-key',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
+  // Configuração de segurança global para todos os endpoints no Swagger
+  const securitySchemes = {
+    'access-token': {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    },
+    'refresh-token': {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    },
+    'secret-key': {
+      type: 'apiKey',
+      name: 'x-secret-key',
+      in: 'header',
+    },
+  };
+
+  // Aplicar requisitos de segurança para todas as rotas
+  document.security = [
+    {
+      'access-token': [],
+      'refresh-token': [],
+      'secret-key': [],
+    },
+  ];
+
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
       filter: true,
       showRequestDuration: true,
+      persistAuthorization: true,
     },
     customSiteTitle: 'Akashi API Docs',
   });

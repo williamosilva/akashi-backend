@@ -7,6 +7,7 @@ import {
   Delete,
   Get,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,12 +15,20 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiBearerAuth,
+  ApiSecurity,
 } from '@nestjs/swagger';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
+import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 
 @ApiTags('Projects')
 @Controller('projects')
+@UseGuards(JwtAuthGuard)
+// Adicionar esses decorators para exibir os ícones de autenticação no Swagger
+@ApiBearerAuth('access-token')
+@ApiBearerAuth('refresh-token')
+@ApiSecurity('secret-key')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
