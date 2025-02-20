@@ -185,36 +185,47 @@ export class ProjectsService {
     updateData: Record<string, any>,
   ) {
     try {
-      const project = await this.validateProject(projectId);
-      const dataInfo = project.dataInfo || {};
+      if (!Types.ObjectId.isValid(projectId)) {
+        throw new BadRequestException('Invalid project ID');
+      }
 
+      // Primeiro verificamos se o projeto existe
+      const project = await this.projectModel.findById(projectId);
+      if (!project) throw new NotFoundException('Project not found');
+
+      const dataInfo = project.dataInfo || {};
       if (!dataInfo[entryId]) {
         throw new NotFoundException('Entry not found with provided ID');
       }
 
       this.removeDataReturnFromApiIntegrations(updateData);
 
+      // Preparamos o objeto de entrada atualizado
       const updatedEntry = {
         ...dataInfo[entryId],
         ...updateData,
       };
 
-      dataInfo[entryId] = updatedEntry;
-      project.dataInfo = dataInfo;
+      // Criamos o objeto de atualização para o operador $set
+      const updateObject = {};
+      updateObject[`dataInfo.${entryId}`] = updatedEntry;
 
-      const savedProject = await project.save();
-      console.log('Projeto salvo com sucesso:', savedProject);
+      // Usamos findByIdAndUpdate diretamente
+      const updatedProject = await this.projectModel.findByIdAndUpdate(
+        projectId,
+        { $set: updateObject },
+        { new: true }, // Retorna o documento atualizado
+      );
 
-      // Verificação adicional para confirmar a persistência
-      const verifiedProject = await this.projectModel.findById(projectId);
-      console.log('Projeto verificado após salvar:', verifiedProject);
+      console.log('Projeto atualizado com findByIdAndUpdate:', updatedProject);
 
-      return savedProject;
+      return updatedProject;
     } catch (error) {
-      console.error('Erro ao salvar o projeto:', error);
+      console.error('Erro ao atualizar o projeto:', error);
       throw error;
     }
   }
+
   private removeDataReturnFromApiIntegrations(data: any) {
     if (!data || typeof data !== 'object') return;
 
