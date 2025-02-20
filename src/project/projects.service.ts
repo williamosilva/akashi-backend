@@ -184,27 +184,37 @@ export class ProjectsService {
     entryId: string,
     updateData: Record<string, any>,
   ) {
-    const project = await this.validateProject(projectId);
-    const dataInfo = project.dataInfo || {};
+    try {
+      const project = await this.validateProject(projectId);
+      const dataInfo = project.dataInfo || {};
 
-    if (!dataInfo[entryId]) {
-      throw new NotFoundException('Entry not found with provided ID');
+      if (!dataInfo[entryId]) {
+        throw new NotFoundException('Entry not found with provided ID');
+      }
+
+      this.removeDataReturnFromApiIntegrations(updateData);
+
+      const updatedEntry = {
+        ...dataInfo[entryId],
+        ...updateData,
+      };
+
+      dataInfo[entryId] = updatedEntry;
+      project.dataInfo = dataInfo;
+
+      const savedProject = await project.save();
+      console.log('Projeto salvo com sucesso:', savedProject);
+
+      // Verificação adicional para confirmar a persistência
+      const verifiedProject = await this.projectModel.findById(projectId);
+      console.log('Projeto verificado após salvar:', verifiedProject);
+
+      return savedProject;
+    } catch (error) {
+      console.error('Erro ao salvar o projeto:', error);
+      throw error;
     }
-
-    this.removeDataReturnFromApiIntegrations(updateData);
-
-    const updatedEntry = {
-      ...dataInfo[entryId],
-      ...updateData,
-    };
-
-    dataInfo[entryId] = updatedEntry;
-    project.dataInfo = dataInfo;
-
-    await project.save();
-    return project;
   }
-
   private removeDataReturnFromApiIntegrations(data: any) {
     if (!data || typeof data !== 'object') return;
 
