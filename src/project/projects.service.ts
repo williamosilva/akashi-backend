@@ -198,17 +198,24 @@ export class ProjectsService {
         throw new NotFoundException('Entry not found with provided ID');
       }
 
+      // Remove dataReturn de updateData
       this.removeDataReturnFromApiIntegrations(updateData);
 
       // Verificamos se o objeto está vazio
       const isEmptyObject = Object.keys(updateData).length === 0;
 
+      // Fazemos uma cópia profunda da entrada existente e removemos dataReturn
+      const existingEntryWithoutDataReturn = JSON.parse(
+        JSON.stringify(dataInfo[entryId]),
+      );
+      this.removeDataReturnFromApiIntegrations(existingEntryWithoutDataReturn);
+
       // Se o objeto estiver vazio, definimos uma entrada vazia
-      // Caso contrário, mesclamos com os dados existentes
+      // Caso contrário, mesclamos com os dados existentes (sem dataReturn)
       const updatedEntry = isEmptyObject
         ? {}
         : {
-            ...dataInfo[entryId],
+            ...existingEntryWithoutDataReturn,
             ...updateData,
           };
 
