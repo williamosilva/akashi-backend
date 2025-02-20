@@ -200,11 +200,17 @@ export class ProjectsService {
 
       this.removeDataReturnFromApiIntegrations(updateData);
 
-      // Preparamos o objeto de entrada atualizado
-      const updatedEntry = {
-        ...dataInfo[entryId],
-        ...updateData,
-      };
+      // Verificamos se o objeto está vazio
+      const isEmptyObject = Object.keys(updateData).length === 0;
+
+      // Se o objeto estiver vazio, definimos uma entrada vazia
+      // Caso contrário, mesclamos com os dados existentes
+      const updatedEntry = isEmptyObject
+        ? {}
+        : {
+            ...dataInfo[entryId],
+            ...updateData,
+          };
 
       // Criamos o objeto de atualização para o operador $set
       const updateObject = {};
