@@ -198,39 +198,43 @@ export class ProjectsService {
         throw new NotFoundException('Entry not found with provided ID');
       }
 
-      // Remove dataReturn de updateData
-      this.removeDataReturnFromApiIntegrations(updateData);
-
       // Verificamos se o objeto está vazio
       const isEmptyObject = Object.keys(updateData).length === 0;
 
-      // Fazemos uma cópia profunda da entrada existente e removemos dataReturn
-      const existingEntryWithoutDataReturn = JSON.parse(
-        JSON.stringify(dataInfo[entryId]),
-      );
-      this.removeDataReturnFromApiIntegrations(existingEntryWithoutDataReturn);
+      // Criamos um objeto totalmente novo com apenas o que o cliente enviou
+      // NÃO mesclamos com o existente
+      const updatedEntry = isEmptyObject ? {} : { ...updateData };
 
-      // Se o objeto estiver vazio, definimos uma entrada vazia
-      // Caso contrário, mesclamos com os dados existentes (sem dataReturn)
-      const updatedEntry = isEmptyObject
-        ? {}
-        : {
-            ...existingEntryWithoutDataReturn,
-            ...updateData,
+      // Se houver API configs no objeto original, preservamos apenas as configs,
+      // não o dataReturn
+      if (
+        dataInfo[entryId].apigatos &&
+        this.isApiIntegrationObject(dataInfo[entryId].apigatos)
+      ) {
+        const {
+          apiUrl,
+          JSONPath,
+          'x-api-key': xApiKey,
+        } = dataInfo[entryId].apigatos;
+
+        // Só preservamos a config da API se não estiver sendo explicitamente substituída
+        if (!updateData.apigatos) {
+          updatedEntry.apigatos = {
+            apiUrl,
+            JSONPath,
+            'x-api-key': xApiKey,
           };
-
-      // Criamos o objeto de atualização para o operador $set
+        }
+      }
+      // Simplesmente substituir todo o conteúdo do entryId
       const updateObject = {};
-      updateObject[`dataInfo.${entryId}`] = updatedEntry;
+      updateObject[`dataInfo.${entryId}`] = updateData || {};
 
-      // Usamos findByIdAndUpdate diretamente
       const updatedProject = await this.projectModel.findByIdAndUpdate(
         projectId,
         { $set: updateObject },
-        { new: true }, // Retorna o documento atualizado
+        { new: true },
       );
-
-      console.log('Projeto atualizado com findByIdAndUpdate:', updatedProject);
 
       return updatedProject;
     } catch (error) {
