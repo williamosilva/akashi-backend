@@ -166,7 +166,19 @@ export class ProjectsService {
 
     for (const [entryId, entry] of Object.entries(dataInfo)) {
       if (this.findApiIntegrationKey(entry)) {
-        processedDataInfo[entryId] = await this.processApiIntegration(entry);
+        const processedEntry = await this.processApiIntegration(entry);
+
+        // Remover o dataReturn de qualquer objeto de integração de API
+        if (processedEntry && typeof processedEntry === 'object') {
+          for (const [key, value] of Object.entries(processedEntry)) {
+            if (value && typeof value === 'object' && 'dataReturn' in value) {
+              const { dataReturn, ...apiConfigOnly } = value;
+              processedEntry[key] = apiConfigOnly;
+            }
+          }
+        }
+
+        processedDataInfo[entryId] = processedEntry;
       }
     }
 
