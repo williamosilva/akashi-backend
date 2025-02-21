@@ -269,26 +269,48 @@ export class ProjectsService {
     }
   }
 
-  async updateProjectDataInfo(
+  async addProjectDataEntry(
     projectId: string,
-    updateProjectDto: UpdateProjectDto,
+    newEntryData: Record<string, any>,
   ) {
-    const project = await this.validateProject(projectId);
-    const currentDataInfo = project.dataInfo || {};
-
-    if (updateProjectDto.dataInfo) {
-      for (const [originalKey, value] of Object.entries(
-        updateProjectDto.dataInfo,
-      )) {
-        const newEntryId = this.generateObjectId();
-        currentDataInfo[newEntryId] = { [originalKey]: value };
-      }
-
-      project.dataInfo = currentDataInfo;
-      await project.save();
+    if (!Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('Invalid project ID');
     }
 
-    return project;
+    const project = await this.validateProject(projectId);
+    const user = await this.userModel.findById(project.user);
+    if (!user) throw new NotFoundException('User not found');
+
+    const userPlan = user.plan ?? 'free';
+    const currentDataInfo = project.dataInfo || {};
+
+    // Verificar se há integração de API externa no novo objeto
+    const hasExternalApi = Object.values(newEntryData).some((value) => {
+      if (typeof value !== 'object') return false;
+      return Object.values(value).some((subValue) =>
+        this.isApiIntegrationObject(subValue),
+      );
+    });
+
+    if (hasExternalApi && !['premium', 'admin'].includes(userPlan)) {
+      throw new ForbiddenException(
+        'External API integration requires Premium plan',
+      );
+    }
+
+    // Gerar novo ID e adicionar entrada
+    const newEntryId = this.generateObjectId();
+    currentDataInfo[newEntryId] = newEntryData;
+
+    // Atualizar o projeto
+    project.dataInfo = currentDataInfo;
+    await project.save();
+
+    return {
+      entryId: newEntryId,
+      entry: newEntryData,
+      project,
+    };
   }
 
   private async validateProject(projectId: string) {

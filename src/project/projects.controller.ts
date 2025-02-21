@@ -106,49 +106,54 @@ export class ProjectsController {
   async getProjectDataInfo(@Param('projectId') projectId: string) {
     return this.projectsService.getProjectDataInfo(projectId);
   }
-
-  @Put(':projectId/datainfo')
-  @ApiOperation({ summary: 'Update project dataInfo' })
+  // Controller
+  @Post(':projectId/dataentry')
+  @ApiOperation({ summary: 'Add new entry to project dataInfo' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiBody({ type: UpdateProjectDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      example: {
+        novoOrcamento: {
+          valor: 25000,
+          moeda: 'BRL',
+        },
+      },
+    },
+  })
   @ApiResponse({
-    status: 200,
-    description: 'Project information updated successfully',
+    status: 201,
+    description: 'Entry added successfully',
     schema: {
       example: {
-        _id: '663d1a5e8a9f6a4d9f4c7b1c',
-        name: 'Marketing Project',
-        dataInfo: {
-          '663d1a5e8a9f6a4d9f4c7b1d': {
-            orcamento: {
-              valor: 75000,
-              moeda: 'BRL',
-            },
+        entryId: '663d1a5e8a9f6a4d9f4c7b20',
+        entry: {
+          novoOrcamento: {
+            valor: 25000,
+            moeda: 'BRL',
           },
-          '663d1a5e8a9f6a4d9f4c7b1e': {
-            integracaoexemplo: {
-              apiUrl: 'https://api.example.com/cliente/updated',
-              JSONPath: '$.store.book[0].client',
-              x_api_key: 'updated-api-key',
-            },
-          },
-          '663d1a5e8a9f6a4d9f4c7b20': {
-            newField: {
-              notes: 'Additional information',
+        },
+        project: {
+          _id: '663d1a5e8a9f6a4d9f4c7b1c',
+          name: 'Marketing Project',
+          dataInfo: {
+            // Existing entries...
+            '663d1a5e8a9f6a4d9f4c7b20': {
+              novoOrcamento: {
+                valor: 25000,
+                moeda: 'BRL',
+              },
             },
           },
         },
       },
     },
   })
-  async updateProjectDataInfo(
+  async addProjectDataEntry(
     @Param('projectId') projectId: string,
-    @Body() updateDataInfoDto: UpdateProjectDto,
+    @Body() newEntryData: Record<string, any>,
   ) {
-    return this.projectsService.updateProjectDataInfo(
-      projectId,
-      updateDataInfoDto,
-    );
+    return this.projectsService.addProjectDataEntry(projectId, newEntryData);
   }
 
   @Put(':projectId/datainfo/entry/:entryId')
