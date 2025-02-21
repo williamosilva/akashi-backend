@@ -255,20 +255,6 @@ export class ProjectsService {
     }
   }
 
-  private removeDataReturnFromApiIntegrations(data: any) {
-    if (!data || typeof data !== 'object') return;
-
-    for (const key in data) {
-      if (this.isApiIntegrationObject(data[key])) {
-        if ('dataReturn' in data[key]) {
-          delete data[key].dataReturn;
-        }
-      } else if (typeof data[key] === 'object') {
-        this.removeDataReturnFromApiIntegrations(data[key]);
-      }
-    }
-  }
-
   async addProjectDataEntry(
     projectId: string,
     newEntryData: Record<string, any>,
@@ -335,6 +321,46 @@ export class ProjectsService {
     const project = await this.projectModel.findById(projectId);
     if (!project) throw new NotFoundException('Project not found');
     return project;
+  }
+
+  async deleteProjectDataEntry(projectId: string, entryId: string) {
+    try {
+      if (!Types.ObjectId.isValid(projectId)) {
+        throw new BadRequestException('Invalid project ID');
+      }
+
+      // Verificar se o projeto existe
+      const project = await this.validateProject(projectId);
+
+      // Verificar se o entry existe
+      if (!project.dataInfo || !project.dataInfo[entryId]) {
+        throw new NotFoundException('Entry not found');
+      }
+
+      // Criar o objeto de atualização para o MongoDB (usando $unset para remover o campo)
+      const updateObject = {};
+      updateObject[`dataInfo.${entryId}`] = 1; // 1 é apenas um placeholder, o importante é a chave
+
+      // Usar findByIdAndUpdate para remover o entry específico
+      const updatedProject = await this.projectModel.findByIdAndUpdate(
+        projectId,
+        { $unset: updateObject },
+        { new: true },
+      );
+
+      if (!updatedProject) {
+        throw new NotFoundException('Project not found');
+      }
+
+      return {
+        message: 'Entry deleted successfully',
+        entryId,
+        project: updatedProject,
+      };
+    } catch (error) {
+      console.error('Erro ao deletar entry do projeto:', error);
+      throw error;
+    }
   }
 
   async deleteProject(projectId: string) {

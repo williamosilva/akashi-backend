@@ -241,4 +241,32 @@ export class ProjectsController {
   async deleteProject(@Param('projectId') projectId: string) {
     return this.projectsService.deleteProject(projectId);
   }
+
+  @Delete(':projectId/dataentry/:entryId')
+  @ApiOperation({ summary: 'Delete specific entry from project dataInfo' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'entryId', description: 'Entry ID to be deleted' })
+  @ApiResponse({
+    status: 200,
+    description: 'Entry deleted successfully',
+    schema: {
+      example: {
+        message: 'Entry deleted successfully',
+        entryId: '663d1a5e8a9f6a4d9f4c7b20',
+        project: {
+          _id: '663d1a5e8a9f6a4d9f4c7b1c',
+          name: 'Marketing Project',
+          dataInfo: {
+            // Remaining entries...
+          },
+        },
+      },
+    },
+  })
+  async deleteProjectDataEntry(
+    @Param('projectId') projectId: string,
+    @Param('entryId') entryId: string,
+  ) {
+    return this.projectsService.deleteProjectDataEntry(projectId, entryId);
+  }
 }
