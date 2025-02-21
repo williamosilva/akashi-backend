@@ -273,44 +273,59 @@ export class ProjectsService {
     projectId: string,
     newEntryData: Record<string, any>,
   ) {
-    if (!Types.ObjectId.isValid(projectId)) {
-      throw new BadRequestException('Invalid project ID');
-    }
+    try {
+      if (!Types.ObjectId.isValid(projectId)) {
+        throw new BadRequestException('Invalid project ID');
+      }
 
-    const project = await this.validateProject(projectId);
-    const user = await this.userModel.findById(project.user);
-    if (!user) throw new NotFoundException('User not found');
+      // Primeiro verificamos se o projeto existe
+      const project = await this.validateProject(projectId);
+      const user = await this.userModel.findById(project.user);
+      if (!user) throw new NotFoundException('User not found');
 
-    const userPlan = user.plan ?? 'free';
-    const currentDataInfo = project.dataInfo || {};
+      const userPlan = user.plan ?? 'free';
 
-    // Verificar se há integração de API externa no novo objeto
-    const hasExternalApi = Object.values(newEntryData).some((value) => {
-      if (typeof value !== 'object') return false;
-      return Object.values(value).some((subValue) =>
-        this.isApiIntegrationObject(subValue),
+      // Verificar se há integração de API externa no novo objeto
+      const hasExternalApi = Object.values(newEntryData).some((value) => {
+        if (typeof value !== 'object') return false;
+        return Object.values(value).some((subValue) =>
+          this.isApiIntegrationObject(subValue),
+        );
+      });
+
+      if (hasExternalApi && !['premium', 'admin'].includes(userPlan)) {
+        throw new ForbiddenException(
+          'External API integration requires Premium plan',
+        );
+      }
+
+      // Gerar novo ID para o entry
+      const newEntryId = this.generateObjectId();
+
+      // Criar o objeto de atualização para o MongoDB
+      const updateObject = {};
+      updateObject[`dataInfo.${newEntryId}`] = newEntryData;
+
+      // Usar findByIdAndUpdate para garantir que os dados sejam salvos
+      const updatedProject = await this.projectModel.findByIdAndUpdate(
+        projectId,
+        { $set: updateObject },
+        { new: true },
       );
-    });
 
-    if (hasExternalApi && !['premium', 'admin'].includes(userPlan)) {
-      throw new ForbiddenException(
-        'External API integration requires Premium plan',
-      );
+      if (!updatedProject) {
+        throw new NotFoundException('Project not found');
+      }
+
+      return {
+        entryId: newEntryId,
+        entry: newEntryData,
+        project: updatedProject,
+      };
+    } catch (error) {
+      console.error('Erro ao adicionar entry ao projeto:', error);
+      throw error;
     }
-
-    // Gerar novo ID e adicionar entrada
-    const newEntryId = this.generateObjectId();
-    currentDataInfo[newEntryId] = newEntryData;
-
-    // Atualizar o projeto
-    project.dataInfo = currentDataInfo;
-    await project.save();
-
-    return {
-      entryId: newEntryId,
-      entry: newEntryData,
-      project,
-    };
   }
 
   private async validateProject(projectId: string) {
