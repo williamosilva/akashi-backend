@@ -393,6 +393,6 @@ export class ProjectsService {
       .select('name _id')
       .lean();
 
-    return projects.length ? projects : {};
+    return projects.length ? projects : [];
   }
 }
