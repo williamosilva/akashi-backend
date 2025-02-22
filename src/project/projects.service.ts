@@ -150,7 +150,7 @@ export class ProjectsService {
   }
 
   private checkUserPlan(plan: string, count: number) {
-    const limits = { default: 1, basic: 5, premium: 10 };
+    const limits = { default: 1, basic: 5, premium: 10, admin: Infinity };
     const limit = limits[plan] || limits.default;
     if (count >= limit) {
       throw new ConflictException(
