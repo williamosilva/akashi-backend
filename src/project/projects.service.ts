@@ -393,10 +393,6 @@ export class ProjectsService {
       .select('name _id')
       .lean();
 
-    if (!projects.length) {
-      throw new NotFoundException('No projects found for this user');
-    }
-
-    return projects;
+    return projects.length ? projects : {};
   }
 }
