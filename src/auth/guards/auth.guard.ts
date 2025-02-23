@@ -76,8 +76,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             );
           });
 
-        // Fixed: Call refreshTokens with only the refresh token
-        const tokens = await this.authService.refreshTokens(refreshToken);
+        const tokens = await this.authService.refreshTokens(
+          payload.sub,
+          payload.email,
+        );
 
         response.setHeader('New-Access-Token', tokens.accessToken);
         response.setHeader('New-Refresh-Token', tokens.refreshToken);
@@ -93,6 +95,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         );
       }
     }
+
+    return false;
   }
 
   private extractToken(request: any, headerName: string): string | null {
