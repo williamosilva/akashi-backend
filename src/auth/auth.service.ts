@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService, TokenExpiredError } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
@@ -108,33 +108,33 @@ export class AuthService {
     };
   }
 
-  // No AuthService
-  // generateTokens deve incluir tokenVersion
   async generateTokens(userId: string, email: string) {
-    const user = (await this.userModel.findById(userId)) as User;
-
-    return {
-      accessToken: this.jwtService.sign(
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
         {
           sub: userId,
           email,
-          tokenVersion: user.tokenVersion, // Adicione isso
         },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: '15m',
+          expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
         },
       ),
-      refreshToken: this.jwtService.sign(
+      this.jwtService.signAsync(
         {
           sub: userId,
-          tokenVersion: user.tokenVersion, // Adicione isso
+          email,
         },
         {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION'),
         },
       ),
+    ]);
+
+    return {
+      accessToken,
+      refreshToken,
     };
   }
 
@@ -145,32 +145,12 @@ export class AuthService {
       });
 
       const user = await this.userModel.findById(payload.sub);
+      if (!user) throw new UnauthorizedException('User not found');
 
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      // Verifica a versão do tokengenerateTokens
-      if (user.tokenVersion !== payload.tokenVersion) {
-        throw new UnauthorizedException('Token revoked');
-      }
-
-      return this.generateTokens(user.id.toString(), user.email);
+      return this.generateTokens(payload.sub, payload.email);
     } catch (error) {
-      let errorMessage = 'Invalid refresh token';
-
-      if (error instanceof TokenExpiredError) {
-        errorMessage = 'Refresh token expired';
-      } else if (error.name === 'JsonWebTokenError') {
-        errorMessage = 'Malformed refresh token';
-      }
-
-      throw new UnauthorizedException(errorMessage);
+      throw new UnauthorizedException('Invalid refresh token');
     }
-  }
-
-  async getUserById(userId: string): Promise<User | null> {
-    return this.userModel.findById(userId);
   }
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
