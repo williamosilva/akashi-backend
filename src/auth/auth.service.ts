@@ -60,11 +60,7 @@ export class AuthService {
       provider: 'local',
     });
 
-    const tokens = await this.generateTokens(
-      user.id,
-      user.email,
-      user.tokenVersion,
-    );
+    const tokens = await this.generateTokens(user.id, user.email);
 
     return {
       id: user.id,
@@ -102,11 +98,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.generateTokens(
-      user.id,
-      user.email,
-      user.tokenVersion,
-    );
+    const tokens = await this.generateTokens(user.id, user.email);
 
     return {
       id: user.id,
@@ -149,11 +141,7 @@ export class AuthService {
         throw new UnauthorizedException('Token revoked');
       }
 
-      return this.generateTokens(
-        user.id.toString(),
-        user.email,
-        user.tokenVersion,
-      );
+      return this.generateTokens(user.id.toString(), user.email);
     } catch (error) {
       let errorMessage = 'Invalid refresh token';
 
@@ -205,7 +193,6 @@ export class AuthService {
         const tokens = await this.generateTokens(
           existingUser.id,
           existingUser.email,
-          existingUser.tokenVersion,
         );
         return {
           id: existingUser.id,
@@ -226,11 +213,7 @@ export class AuthService {
         plan: 'free',
       });
 
-      const tokens = await this.generateTokens(
-        newUser.id,
-        newUser.email,
-        newUser.tokenVersion,
-      );
+      const tokens = await this.generateTokens(newUser.id, newUser.email);
       return {
         id: newUser.id,
         email: newUser.email,
