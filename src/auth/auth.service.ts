@@ -64,6 +64,8 @@ export class AuthService {
 
     return {
       id: user.id,
+      email: user.email,
+      fullName: user.fullName,
       ...tokens,
     };
   }
@@ -100,6 +102,8 @@ export class AuthService {
 
     return {
       id: user.id,
+      email: user.email,
+      fullName: user.fullName,
       ...tokens,
     };
   }
