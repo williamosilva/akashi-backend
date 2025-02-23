@@ -23,6 +23,9 @@ export class User extends Document {
 
   @Prop({ default: 'free' })
   plan?: 'free' | 'basic' | 'premium' | 'admin';
+
+  @Prop({ default: 0 })
+  tokenVersion: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

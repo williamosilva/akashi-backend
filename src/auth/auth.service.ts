@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
@@ -60,7 +60,11 @@ export class AuthService {
       provider: 'local',
     });
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.tokenVersion,
+    );
 
     return {
       id: user.id,
@@ -98,7 +102,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.tokenVersion,
+    );
 
     return {
       id: user.id,
@@ -108,23 +116,21 @@ export class AuthService {
     };
   }
 
-  async generateTokens(userId: string, email: string) {
+  private async generateTokens(
+    userId: string,
+    email: string,
+    tokenVersion: number,
+  ) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-        },
+        { sub: userId, email },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
           expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
         },
       ),
       this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-        },
+        { sub: userId, tokenVersion }, // Inclui tokenVersion no refresh
         {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
           expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION'),
@@ -132,10 +138,7 @@ export class AuthService {
       ),
     ]);
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken, refreshToken };
   }
 
   async refreshTokens(refreshToken: string) {
@@ -144,9 +147,32 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      return this.generateTokens(payload.sub, payload.email);
+      const user = await this.userModel.findById(payload.sub);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Verifica a versão do token
+      if (user.tokenVersion !== payload.tokenVersion) {
+        throw new UnauthorizedException('Token revoked');
+      }
+
+      return this.generateTokens(
+        user.id.toString(),
+        user.email,
+        user.tokenVersion,
+      );
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      let errorMessage = 'Invalid refresh token';
+
+      if (error instanceof TokenExpiredError) {
+        errorMessage = 'Refresh token expired';
+      } else if (error.name === 'JsonWebTokenError') {
+        errorMessage = 'Malformed refresh token';
+      }
+
+      throw new UnauthorizedException(errorMessage);
     }
   }
 
@@ -184,6 +210,7 @@ export class AuthService {
         const tokens = await this.generateTokens(
           existingUser.id,
           existingUser.email,
+          existingUser.tokenVersion,
         );
         return {
           id: existingUser.id,
@@ -204,7 +231,11 @@ export class AuthService {
         plan: 'free',
       });
 
-      const tokens = await this.generateTokens(newUser.id, newUser.email);
+      const tokens = await this.generateTokens(
+        newUser.id,
+        newUser.email,
+        newUser.tokenVersion,
+      );
       return {
         id: newUser.id,
         email: newUser.email,
