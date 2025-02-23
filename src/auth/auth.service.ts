@@ -138,40 +138,15 @@ export class AuthService {
     };
   }
 
-  async getUserFromToken(accessToken: string): Promise<{
-    id: string;
-    email: string;
-    fullName: string;
-    photo: string | undefined;
-  }> {
+  async refreshTokens(refreshToken: string) {
     try {
-      // Decodifica o token usando o JWT_SECRET configurado
-      const payload = await this.jwtService.verifyAsync(accessToken, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      // Busca o usuário usando o ID que está no token
-      const user = await this.userModel.findById(payload.sub);
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      // Retorna os dados incluindo photo (que pode ser undefined)
-      return {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        photo: user.photo,
-      };
+      return this.generateTokens(payload.sub, payload.email);
     } catch (error) {
-      if (
-        error?.name === 'JsonWebTokenError' ||
-        error?.name === 'TokenExpiredError'
-      ) {
-        throw new UnauthorizedException('Invalid or expired token');
-      }
-      throw new InternalServerErrorException('Error processing token');
+      throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
@@ -244,8 +219,5 @@ export class AuthService {
       console.error('Error in handleSocialLogin:', error);
       throw new InternalServerErrorException('Error processing social login');
     }
-  }
-  async refreshTokens(userId: string, email: string) {
-    return this.generateTokens(userId, email);
   }
 }

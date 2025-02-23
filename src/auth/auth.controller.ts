@@ -188,14 +188,13 @@ export class AuthController {
   @ApiBody({
     schema: {
       example: {
-        userId: '60d5ecb54b3xxb2c001f3e1234',
-        email: 'user@example.com',
+        refreshToken: 'token_string',
       },
     },
   })
   @ApiResponse({ status: 200, description: 'Tokens refreshed' })
-  async refreshTokens(@Body() body: { userId: string; email: string }) {
-    return this.authService.refreshTokens(body.userId, body.email);
+  async refreshTokens(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshTokens(body.refreshToken);
   }
 
   @Get('validate')
@@ -238,7 +237,7 @@ export class AuthController {
   })
   async getCurrentUser(@Req() req) {
     const token = req.headers.authorization?.split(' ')[1];
-    return this.authService.getUserFromToken(token);
+    return this.authService.refreshTokens(token);
   }
 
   @Public()
