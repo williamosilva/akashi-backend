@@ -116,29 +116,20 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(
-    userId: string,
-    email: string,
-    tokenVersion: number,
-  ) {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        { sub: userId, email },
-        {
-          secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
-        },
-      ),
-      this.jwtService.signAsync(
-        { sub: userId, tokenVersion }, // Inclui tokenVersion no refresh
-        {
-          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION'),
-        },
-      ),
-    ]);
+  // No AuthService
+  async generateTokens(userId: string, email: string) {
+    const user = (await this.userModel.findById(userId)) as User;
 
-    return { accessToken, refreshToken };
+    return {
+      accessToken: this.jwtService.sign(
+        { sub: userId, email, tokenVersion: user.tokenVersion },
+        { secret: 'JWT_SECRET', expiresIn: '15m' },
+      ),
+      refreshToken: this.jwtService.sign(
+        { sub: userId, tokenVersion: user.tokenVersion },
+        { secret: 'JWT_REFRESH_SECRET', expiresIn: '7d' },
+      ),
+    };
   }
 
   async refreshTokens(refreshToken: string) {
@@ -153,7 +144,7 @@ export class AuthService {
         throw new UnauthorizedException('User not found');
       }
 
-      // Verifica a versão do token
+      // Verifica a versão do tokengenerateTokens
       if (user.tokenVersion !== payload.tokenVersion) {
         throw new UnauthorizedException('Token revoked');
       }
