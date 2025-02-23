@@ -109,17 +109,31 @@ export class AuthService {
   }
 
   // No AuthService
+  // generateTokens deve incluir tokenVersion
   async generateTokens(userId: string, email: string) {
     const user = (await this.userModel.findById(userId)) as User;
 
     return {
       accessToken: this.jwtService.sign(
-        { sub: userId, email, tokenVersion: user.tokenVersion },
-        { secret: 'JWT_SECRET', expiresIn: '15m' },
+        {
+          sub: userId,
+          email,
+          tokenVersion: user.tokenVersion, // Adicione isso
+        },
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: '15m',
+        },
       ),
       refreshToken: this.jwtService.sign(
-        { sub: userId, tokenVersion: user.tokenVersion },
-        { secret: 'JWT_REFRESH_SECRET', expiresIn: '7d' },
+        {
+          sub: userId,
+          tokenVersion: user.tokenVersion, // Adicione isso
+        },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
       ),
     };
   }
