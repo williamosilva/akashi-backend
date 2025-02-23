@@ -176,6 +176,10 @@ export class AuthService {
     }
   }
 
+  async getUserById(userId: string): Promise<User | null> {
+    return this.userModel.findById(userId);
+  }
+
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
     console.log('Profile:', profile);
 
