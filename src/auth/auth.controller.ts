@@ -211,6 +211,36 @@ export class AuthController {
     return { ok: true, userId: req.user.sub };
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user data' })
+  @ApiResponse({
+    status: 200,
+    description: 'User data retrieved successfully',
+    schema: {
+      example: {
+        id: '60d5ecb5xx4b3b2c001f3e1234',
+        email: 'user@example.com',
+        fullName: 'John Doe',
+        photo: 'https://example.com/photo.jpg',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired token',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Invalid or expired token',
+      },
+    },
+  })
+  async getCurrentUser(@Req() req) {
+    const token = req.headers.authorization?.split(' ')[1];
+    return this.authService.getUserFromToken(token);
+  }
+
   @Public()
   @Post('login')
   @ApiOperation({ summary: 'User Login' })

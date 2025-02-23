@@ -106,7 +106,6 @@ export class GitHubAuthStrategy extends PassportStrategy(
       }
     }
 
-    // Passo 2: Selecionar o email corretamente
     const primaryEmail =
       emails.find((e) => e.primary)?.value ||
       emails[0]?.value ||
@@ -114,7 +113,7 @@ export class GitHubAuthStrategy extends PassportStrategy(
 
     return {
       id: profile.id,
-      email: primaryEmail, // ← Usar email primário/verificado
+      email: primaryEmail,
       displayName:
         profile.displayName ||
         profile._json?.name ||
