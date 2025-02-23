@@ -2,7 +2,6 @@ import {
   Injectable,
   ExecutionContext,
   UnauthorizedException,
-  Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
@@ -35,75 +34,60 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
 
+    // 🔐 Verificação da Secret Key no Header
     const providedSecret = request.headers['x-secret-key'];
     const expectedSecret = this.configService.get<string>('SECRET_KEY');
-    if (!providedSecret) {
-      throw new UnauthorizedException('Secret key is missing in headers');
-    }
-    if (providedSecret !== expectedSecret) {
-      throw new UnauthorizedException('Provided secret key is invalid');
+    if (!providedSecret || providedSecret !== expectedSecret) {
+      throw new UnauthorizedException('Invalid or missing secret key');
     }
 
     try {
+      // 🛠️ Tenta validar o Access Token primeiro
       const accessToken = this.extractToken(request, 'Authorization');
-      if (!accessToken) {
-        throw new UnauthorizedException(
-          'Access token is missing in Authorization header',
-        );
-      }
+      if (!accessToken) throw new Error('Missing access token');
 
       const payload = await this.jwtService.verifyAsync(accessToken, {
         secret: this.configService.get<string>('JWT_SECRET'),
       });
+
       request.user = payload;
       return true;
     } catch (error) {
+      if (error.name !== 'TokenExpiredError') {
+        throw new UnauthorizedException('Invalid access token');
+      }
+
+      // 🔄 Tenta renovar o token usando o Refresh Token
       try {
         const refreshToken = this.extractToken(request, 'Refresh-Token');
         if (!refreshToken) {
-          throw new UnauthorizedException(
-            'Both access token and refresh token are missing or invalid',
-          );
+          throw new UnauthorizedException('Missing refresh token');
         }
 
-        const payload = await this.jwtService
-          .verifyAsync(refreshToken, {
-            secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          })
-          .catch(() => {
-            throw new UnauthorizedException(
-              'Refresh token is expired or invalid',
-            );
-          });
+        // 🛠️ Valida o Refresh Token
+        const refreshPayload = await this.jwtService.verifyAsync(refreshToken, {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        });
 
-        const tokens = await this.authService.refreshTokens(
-          payload.sub,
-          payload.email,
-        );
+        // 🔄 Gera um novo Access Token
+        const newAccessToken =
+          await this.authService.refreshTokens(refreshToken);
 
-        response.setHeader('New-Access-Token', tokens.accessToken);
-        response.setHeader('New-Refresh-Token', tokens.refreshToken);
+        // 📌 Atualiza os Headers para o Frontend pegar o novo Token
+        response.setHeader('New-Access-Token', newAccessToken);
 
-        request.user = payload;
+        // ✅ Atualiza o usuário na Request
+        request.user = refreshPayload;
         return true;
       } catch (refreshError) {
-        if (refreshError instanceof UnauthorizedException) {
-          throw refreshError;
-        }
-        throw new UnauthorizedException(
-          'Failed to refresh tokens: ' + refreshError.message,
-        );
+        throw new UnauthorizedException('Invalid or expired refresh token');
       }
     }
-
-    return false;
   }
 
   private extractToken(request: any, headerName: string): string | null {
     const token = request.headers[headerName.toLowerCase()];
-    if (!token) {
-      return null;
-    }
+    if (!token) return null;
 
     const parts = token.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {

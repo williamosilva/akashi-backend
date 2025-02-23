@@ -138,6 +138,31 @@ export class AuthService {
     };
   }
 
+  async refreshTokens(refreshToken: string) {
+    try {
+      // Verifica se o refreshToken é válido
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      });
+
+      // Gera um novo accessToken usando os dados extraídos do refreshToken
+      const newAccessToken = await this.jwtService.signAsync(
+        {
+          sub: payload.sub, // ID do usuário
+          email: payload.email, // Email do usuário
+        },
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
+        },
+      );
+
+      return { accessToken: newAccessToken };
+    } catch (error) {
+      throw new UnauthorizedException('Refresh token inválido ou expirado');
+    }
+  }
+
   async getUserFromToken(accessToken: string): Promise<{
     id: string;
     email: string;
@@ -230,6 +255,7 @@ export class AuthService {
       });
 
       const tokens = await this.generateTokens(newUser.id, newUser.email);
+
       return {
         id: newUser.id,
         email: newUser.email,
@@ -244,8 +270,5 @@ export class AuthService {
       console.error('Error in handleSocialLogin:', error);
       throw new InternalServerErrorException('Error processing social login');
     }
-  }
-  async refreshTokens(userId: string, email: string) {
-    return this.generateTokens(userId, email);
   }
 }

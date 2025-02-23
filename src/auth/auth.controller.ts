@@ -8,6 +8,7 @@ import {
   Req,
   Res,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -194,8 +195,8 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 200, description: 'Tokens refreshed' })
-  async refreshTokens(@Body() body: { userId: string; email: string }) {
-    return this.authService.refreshTokens(body.userId, body.email);
+  async refreshTokens(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshTokens(body.refreshToken);
   }
 
   @Get('validate')
@@ -239,6 +240,17 @@ export class AuthController {
   async getCurrentUser(@Req() req) {
     const token = req.headers.authorization?.split(' ')[1];
     return this.authService.getUserFromToken(token);
+  }
+
+  @Post('refresh')
+  async refresh(@Req() req) {
+    const refreshToken = req.headers['refresh-token'];
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token ausente');
+    }
+
+    return this.authService.refreshTokens(refreshToken);
   }
 
   @Public()
