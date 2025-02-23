@@ -144,9 +144,6 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      const user = await this.userModel.findById(payload.sub);
-      if (!user) throw new UnauthorizedException('User not found');
-
       return this.generateTokens(payload.sub, payload.email);
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
