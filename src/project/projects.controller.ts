@@ -72,6 +72,37 @@ export class ProjectsController {
     return this.projectsService.createProject(userId, projectData);
   }
 
+  @Get(':projectId/formatted')
+  @ApiOperation({ summary: 'Get formatted project data by ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Formatted project data returned successfully',
+    schema: {
+      example: {
+        'Marketing Project': {
+          objeto1: {
+            orcamento: 50000,
+          },
+          objeto2: {
+            tsetese: 'testset',
+            apiKeyExample: {
+              apiUrl: 'https://api.kanye.rest/',
+              JSONPath: '',
+              'x-api-key': '',
+            },
+            dataReturn: {
+              quote: "I feel like I'm too busy writing history to read it.",
+            },
+          },
+        },
+      },
+    },
+  })
+  async getFormattedProject(@Param('projectId') projectId: string) {
+    return this.projectsService.getFormattedProject(projectId);
+  }
+
   @Get(':projectId/datainfo')
   @ApiOperation({ summary: 'Get project dataInfo by project ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })

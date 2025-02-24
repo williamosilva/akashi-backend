@@ -159,6 +159,28 @@ export class ProjectsService {
     }
   }
 
+  async getFormattedProject(projectId: string) {
+    const project = await this.validateProject(projectId);
+    const dataInfo = project.dataInfo || {};
+    const formattedData = {};
+
+    for (const entryId of Object.keys(dataInfo)) {
+      let entry = dataInfo[entryId];
+      // Processa integrações de API para obter dataReturn
+      entry = await this.processApiIntegration(entry);
+      const { akashiObjectName, ...rest } = entry;
+      if (akashiObjectName) {
+        formattedData[akashiObjectName] = rest;
+      } else {
+        console.warn(`Entry ${entryId} is missing akashiObjectName`);
+      }
+    }
+
+    return {
+      [project.name]: formattedData,
+    };
+  }
+
   async getProjectDataInfo(projectId: string) {
     const project = await this.validateProject(projectId);
     const dataInfo = project.dataInfo || {};
