@@ -77,24 +77,39 @@ export class ProjectsController {
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
     status: 200,
-    description: 'Formatted project data returned successfully',
+    description:
+      'Formatted project data returned successfully (duplicate names get numerical suffixes)',
     schema: {
       example: {
-        'Marketing Project': {
-          objeto1: {
-            orcamento: 50000,
-          },
-          objeto2: {
-            tsetese: 'testset',
-            apiKeyExample: {
+        teste: {
+          'mudei o nome': {
+            'kanye west 2': {
               apiUrl: 'https://api.kanye.rest/',
               JSONPath: '',
               'x-api-key': '',
               dataReturn: {
-                // Agora dentro do objeto de integração
+                quote:
+                  'We used to diss Michael Jackson the media made us call him crazy ... then they killed him',
+              },
+            },
+            tsetese: 'testset',
+            'kanye west 1': {
+              apiUrl: 'https://api.kanye.rest/',
+              JSONPath: '',
+              'x-api-key': '',
+              dataReturn: {
                 quote: "I feel like I'm too busy writing history to read it.",
               },
             },
+          },
+          'New Object': {
+            // Exemplo de objeto vazio
+          },
+          'New Object 2': {
+            // Exemplo de segunda ocorrência
+          },
+          'New Object 3': {
+            // Exemplo de terceira ocorrência
           },
         },
       },
@@ -103,7 +118,6 @@ export class ProjectsController {
   async getFormattedProject(@Param('projectId') projectId: string) {
     return this.projectsService.getFormattedProject(projectId);
   }
-
   @Get(':projectId/datainfo')
   @ApiOperation({ summary: 'Get project dataInfo by project ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })

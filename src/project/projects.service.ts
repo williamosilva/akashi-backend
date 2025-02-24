@@ -163,18 +163,26 @@ export class ProjectsService {
     const project = await this.validateProject(projectId);
     const dataInfo = project.dataInfo || {};
     const formattedData = {};
+    const nameCounts = new Map<string, number>(); // Rastreia repetições de nomes
 
     for (const entryId of Object.keys(dataInfo)) {
       let entry = dataInfo[entryId];
-
-      // Processar TODOS os objetos de API dentro do entry
       const processedEntry = await this.deepProcessApiIntegrations(entry);
-
       const { akashiObjectName, ...rest } = processedEntry;
+
       if (akashiObjectName) {
-        formattedData[akashiObjectName] = rest;
+        // Conta ocorrências do nome
+        const count = (nameCounts.get(akashiObjectName) || 0) + 1;
+        nameCounts.set(akashiObjectName, count);
+
+        // Adiciona sufixo numérico apenas para nomes repetidos
+        const finalKey =
+          count > 1 ? `${akashiObjectName} ${count}` : akashiObjectName;
+
+        formattedData[finalKey] = rest;
       } else {
         console.warn(`Entry ${entryId} is missing akashiObjectName`);
+        formattedData[entryId] = rest;
       }
     }
 
