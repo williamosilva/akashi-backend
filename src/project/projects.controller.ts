@@ -21,6 +21,7 @@ import {
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('Projects')
 @Controller('projects')
@@ -72,6 +73,7 @@ export class ProjectsController {
     return this.projectsService.createProject(userId, projectData);
   }
 
+  @Public()
   @Get(':projectId/formatted')
   @ApiOperation({ summary: 'Get formatted project data by ID' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
