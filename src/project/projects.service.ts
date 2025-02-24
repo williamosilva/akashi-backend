@@ -166,21 +166,13 @@ export class ProjectsService {
 
     for (const entryId of Object.keys(dataInfo)) {
       let entry = dataInfo[entryId];
-      entry = await this.processApiIntegration(entry);
-      const { akashiObjectName, ...rest } = entry;
 
-      // Processamento adicional para garantir o nesting correto
-      const processedEntry = {};
-      for (const [key, value] of Object.entries(rest)) {
-        if (this.isApiIntegrationObject(value)) {
-          processedEntry[key] = value;
-        } else {
-          processedEntry[key] = value;
-        }
-      }
+      // Processar TODOS os objetos de API dentro do entry
+      const processedEntry = await this.deepProcessApiIntegrations(entry);
 
+      const { akashiObjectName, ...rest } = processedEntry;
       if (akashiObjectName) {
-        formattedData[akashiObjectName] = processedEntry;
+        formattedData[akashiObjectName] = rest;
       } else {
         console.warn(`Entry ${entryId} is missing akashiObjectName`);
       }
@@ -189,6 +181,66 @@ export class ProjectsService {
     return {
       [project.name]: formattedData,
     };
+  }
+
+  private async deepProcessApiIntegrations(obj: any): Promise<any> {
+    // Processar objetos aninhados recursivamente
+    if (typeof obj !== 'object' || obj === null) return obj;
+
+    // Clonar o objeto para evitar mutações
+    const clonedObj = { ...obj };
+
+    // Processar primeiro as propriedades mais profundas
+    for (const [key, value] of Object.entries(clonedObj)) {
+      clonedObj[key] = await this.deepProcessApiIntegrations(value);
+    }
+
+    // Processar a própria integração de API se for o caso
+    if (this.isApiIntegrationObject(clonedObj)) {
+      return this.processSingleApiIntegration(clonedObj);
+    }
+
+    return clonedObj;
+  }
+
+  private async processSingleApiIntegration(apiConfig: any) {
+    try {
+      const config = {
+        headers: new AxiosHeaders(),
+      };
+
+      if (apiConfig.x_api_key) {
+        config.headers.set('x-api-key', apiConfig.x_api_key);
+      }
+
+      const apiResponse = await axios.get(apiConfig.apiUrl, config);
+      let dataReturn;
+
+      if (apiConfig.JSONPath) {
+        try {
+          const results = jsonpath.query(apiResponse.data, apiConfig.JSONPath);
+          dataReturn =
+            results.length > 0
+              ? results[0]
+              : `No data found for JSONPath: "${apiConfig.JSONPath}"`;
+        } catch (error) {
+          dataReturn = `Invalid JSONPath: "${apiConfig.JSONPath}". Error: ${error.message}`;
+        }
+      } else {
+        dataReturn = apiResponse.data;
+      }
+
+      return {
+        ...apiConfig,
+        dataReturn,
+      };
+    } catch (error) {
+      console.error(`Error fetching API (${apiConfig.apiUrl}):`, error.message);
+      return {
+        ...apiConfig,
+        dataReturn: `Error: ${error.message}`,
+      };
+    }
   }
 
   async getProjectDataInfo(projectId: string) {
