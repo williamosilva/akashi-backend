@@ -168,7 +168,7 @@ export class ProjectsService {
       if (this.findApiIntegrationKey(entry)) {
         const processedEntry = await this.processApiIntegration(entry);
 
-        // Mantenha o processamento existente (se necessário)
+        // Remover o dataReturn de qualquer objeto de integração de API
         if (processedEntry && typeof processedEntry === 'object') {
           for (const [key, value] of Object.entries(processedEntry)) {
             if (value && typeof value === 'object' && 'dataReturn' in value) {
@@ -182,20 +182,12 @@ export class ProjectsService {
       }
     }
 
-    // Salve as alterações (se ainda necessário)
     project.dataInfo = processedDataInfo;
     await project.save();
 
-    // Formate a resposta para incluir apenas akashiObjectName
     return {
       name: project.name,
-      dataInfo: Object.entries(processedDataInfo).reduce(
-        (acc, [entryId, entry]) => {
-          acc[entryId] = { akashiObjectName: entry.akashiObjectName };
-          return acc;
-        },
-        {},
-      ),
+      dataInfo: project.dataInfo,
     };
   }
 

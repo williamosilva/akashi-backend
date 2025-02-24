@@ -83,10 +83,21 @@ export class ProjectsController {
         name: 'Marketing Project',
         dataInfo: {
           '663d1a5e8a9f6a4d9f4c7b1d': {
-            akashiObjectName: 'Orçamento Example',
+            orcamento: {
+              valor: 50000,
+              moeda: 'BRL',
+            },
           },
           '663d1a5e8a9f6a4d9f4c7b1e': {
-            akashiObjectName: 'Integração Example',
+            integracaoexemplo: {
+              apiUrl: 'https://api.example.com/cliente',
+              JSONPath: '$.store.book[0].client',
+              x_api_key: 'your-api-key-here',
+              dataReturn: {
+                nome: 'Cliente Exemplo',
+                email: 'cliente@example.com',
+              },
+            },
           },
         },
       },
@@ -95,7 +106,7 @@ export class ProjectsController {
   async getProjectDataInfo(@Param('projectId') projectId: string) {
     return this.projectsService.getProjectDataInfo(projectId);
   }
-
+  // Controller
   @Post(':projectId/dataentry')
   @ApiOperation({ summary: 'Add new entry to project dataInfo' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
