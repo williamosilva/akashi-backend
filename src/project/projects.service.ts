@@ -166,11 +166,21 @@ export class ProjectsService {
 
     for (const entryId of Object.keys(dataInfo)) {
       let entry = dataInfo[entryId];
-      // Processa integrações de API para obter dataReturn
       entry = await this.processApiIntegration(entry);
       const { akashiObjectName, ...rest } = entry;
+
+      // Processamento adicional para garantir o nesting correto
+      const processedEntry = {};
+      for (const [key, value] of Object.entries(rest)) {
+        if (this.isApiIntegrationObject(value)) {
+          processedEntry[key] = value;
+        } else {
+          processedEntry[key] = value;
+        }
+      }
+
       if (akashiObjectName) {
-        formattedData[akashiObjectName] = rest;
+        formattedData[akashiObjectName] = processedEntry;
       } else {
         console.warn(`Entry ${entryId} is missing akashiObjectName`);
       }

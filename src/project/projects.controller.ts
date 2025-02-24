@@ -90,9 +90,10 @@ export class ProjectsController {
               apiUrl: 'https://api.kanye.rest/',
               JSONPath: '',
               'x-api-key': '',
-            },
-            dataReturn: {
-              quote: "I feel like I'm too busy writing history to read it.",
+              dataReturn: {
+                // Agora dentro do objeto de integração
+                quote: "I feel like I'm too busy writing history to read it.",
+              },
             },
           },
         },
