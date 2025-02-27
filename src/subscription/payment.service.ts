@@ -35,12 +35,15 @@ export class PaymentService {
     );
   }
 
-  async createCheckoutSession(email: string, planType: 'basic' | 'premium') {
+  async createCheckoutSession(
+    email: string | null,
+    planType: 'basic' | 'premium',
+  ) {
     // Generate unique token
     const sessionToken = this.generateUniqueToken();
 
-    // Create Stripe session with token
-    const session = await this.stripe.checkout.sessions.create({
+    // Create Stripe session object
+    const sessionParams: any = {
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [
@@ -52,20 +55,27 @@ export class PaymentService {
           quantity: 1,
         },
       ],
-      customer_email: email,
       success_url: `${process.env.FRONTEND_URL}/success/${sessionToken}`,
       cancel_url: `${process.env.FRONTEND_URL}/cancel/${sessionToken}`,
       metadata: {
-        email,
+        email: email || '',
         planType,
         sessionToken, // Add unique token
       },
-    });
+    };
 
-    // Save session token
+    // Se o email for válido, adiciona à sessão do Stripe
+    if (email) {
+      sessionParams.customer_email = email;
+    }
+
+    // Create Stripe session
+    const session = await this.stripe.checkout.sessions.create(sessionParams);
+
+    // Save session token in DB
     await this.sessionTokenModel.create({
       token: sessionToken,
-      email,
+      email: email || '', // Salva email vazio no banco se não existir
       planType,
       status: 'pending',
     });

@@ -78,10 +78,13 @@ export class PaymentController {
     @Body('planType') planType: 'basic' | 'premium',
     @Request() req,
   ) {
+    const email = req.user?.email || null; // Garante que o email seja null se não existir
+
     const session = await this.paymentService.createCheckoutSession(
-      req.user.email,
+      email,
       planType,
     );
+
     return session;
   }
 
