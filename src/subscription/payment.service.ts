@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import Stripe from 'stripe';
+import { Resend } from 'resend';
 import { Subscription } from './schemas/subscription.schema';
 import { SessionToken } from './schemas/sessionToken.scema';
 import { User } from '../auth/schemas/user.schema';
@@ -11,6 +12,7 @@ import { randomBytes } from 'crypto';
 @Injectable()
 export class PaymentService {
   private stripe: Stripe;
+  private resend: Resend;
 
   @InjectModel(SessionToken.name)
   private sessionTokenModel: Model<SessionToken>;
@@ -33,6 +35,9 @@ export class PaymentService {
         apiVersion: '2025-01-27.acacia',
       },
     );
+
+    // Initialize Resend
+    this.resend = new Resend(this.configService.get('RESEND_API_KEY') || '');
   }
 
   async createCheckoutSession(
@@ -150,12 +155,74 @@ export class PaymentService {
             processedAt: new Date(),
           },
         );
+
+        await this.sendThankYouEmail(
+          session.metadata.email,
+          session.metadata.planType,
+        );
       }
 
       return { received: true };
     } catch (error) {
       console.error('Detailed error in webhook:', error.message);
       throw error;
+    }
+  }
+
+  async sendThankYouEmail(email: string, planType: string) {
+    try {
+      console.log(`Sending thank you email to ${email} for ${planType} plan`);
+
+      const planTitle = planType === 'basic' ? 'Basic Plan' : 'Premium Plan';
+      const planFeatures =
+        planType === 'basic'
+          ? '<li>Basic features</li><li>Standard support</li><li>Limited access</li>'
+          : '<li>All premium features</li><li>Priority support</li><li>Unlimited access</li><li>Advanced analytics</li>';
+
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #3f51b5;">Thank You for Your Purchase!</h1>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <p>Dear Customer,</p>
+            <p>Thank you for subscribing to our <strong>${planTitle}</strong>. We're excited to have you on board!</p>
+            <p>Your subscription includes:</p>
+            <ul>
+              ${planFeatures}
+            </ul>
+            <p>Your subscription is now active and you can start enjoying all the benefits immediately.</p>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <p>If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
+          </div>
+          
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666;">
+            <p>Follow us on social media:</p>
+            <div style="margin-bottom: 20px;">
+              <a href="https://twitter.com/yourhandle" style="text-decoration: none; margin: 0 10px; color: #1da1f2;">Twitter</a>
+              <a href="https://instagram.com/yourhandle" style="text-decoration: none; margin: 0 10px; color: #c13584;">Instagram</a>
+              <a href="https://linkedin.com/in/yourprofile" style="text-decoration: none; margin: 0 10px; color: #0077b5;">LinkedIn</a>
+            </div>
+            <p>Need help? Contact us at <a href="mailto:support@yourdomain.com" style="color: #3f51b5;">support@yourdomain.com</a></p>
+          </div>
+        </div>
+      `;
+
+      await this.resend.emails.send({
+        from: 'no-reply@yourdomain.com',
+        to: email,
+        subject: `Thank You for Subscribing to Our ${planTitle}!`,
+        html: htmlContent,
+      });
+
+      console.log('Thank you email sent successfully');
+    } catch (error) {
+      console.error('Error sending thank you email:', error);
+      // Don't throw the error, just log it
+      // This way, the payment process will continue even if email sending fails
     }
   }
 
