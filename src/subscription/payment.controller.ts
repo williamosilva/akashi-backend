@@ -57,6 +57,39 @@ class SubscriptionDetails {
   plan: 'basic' | 'premium';
 }
 
+class VerifyTokenDto {
+  @ApiProperty({
+    description: 'Session token to verify',
+  })
+  token: string;
+}
+
+class VerifyTokenResponseDto {
+  @ApiProperty({
+    description: 'Whether the token is valid',
+  })
+  valid: boolean;
+
+  @ApiProperty({
+    description: 'Message indicating token status',
+    required: false,
+  })
+  message?: string;
+
+  @ApiProperty({
+    description: 'Email associated with the token',
+    required: false,
+  })
+  email?: string;
+
+  @ApiProperty({
+    description: 'Plan type associated with the token',
+    enum: ['basic', 'premium'],
+    required: false,
+  })
+  planType?: 'basic' | 'premium';
+}
+
 @ApiTags('Payments')
 @Controller('payments')
 export class PaymentController {
@@ -105,6 +138,19 @@ export class PaymentController {
       hasActiveSubscription: subscription !== false,
       subscription: subscription || null,
     };
+  }
+
+  @Public()
+  @Post('verify-token')
+  @ApiOperation({ summary: 'Verify session token validity' })
+  @ApiBody({ type: VerifyTokenDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Token verification result',
+    type: VerifyTokenResponseDto,
+  })
+  async verifyToken(@Body('token') token: string) {
+    return await this.paymentService.verifySessionToken(token);
   }
 
   @Public()
