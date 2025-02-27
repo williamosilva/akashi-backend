@@ -36,8 +36,11 @@ export class PaymentService {
       },
     );
 
-    // Initialize Resend
-    this.resend = new Resend(this.configService.get('RESEND_API_KEY') || '');
+    const resendApiKey = this.configService.get('RESEND_API_KEY') || '';
+    console.log(
+      `Initializing Resend with API key: ${resendApiKey ? 'Present (hidden)' : 'Missing!'}`,
+    );
+    this.resend = new Resend(resendApiKey);
   }
 
   async createCheckoutSession(
@@ -155,7 +158,7 @@ export class PaymentService {
             processedAt: new Date(),
           },
         );
-
+        console.log('chamando verificação de email');
         await this.sendThankYouEmail(
           session.metadata.email,
           session.metadata.planType,
@@ -172,6 +175,12 @@ export class PaymentService {
   async sendThankYouEmail(email: string, planType: string) {
     try {
       console.log(`Sending thank you email to ${email} for ${planType} plan`);
+
+      // Verify email address format
+      if (!email || !email.includes('@')) {
+        console.error(`Invalid email format: ${email}`);
+        return;
+      }
 
       const planTitle = planType === 'basic' ? 'Basic Plan' : 'Premium Plan';
       const planFeatures =
@@ -211,18 +220,32 @@ export class PaymentService {
         </div>
       `;
 
-      await this.resend.emails.send({
-        from: 'no-reply@yourdomain.com',
+      console.log('Email parameters:', {
+        from: 'onboarding@resend.dev',
+        to: email,
+        subject: `Thank You for Subscribing to Our ${planTitle}!`,
+        // Don't log the full HTML content
+      });
+
+      const result = await this.resend.emails.send({
+        from: 'onboarding@resend.dev', // Consider changing to a verified domain
         to: email,
         subject: `Thank You for Subscribing to Our ${planTitle}!`,
         html: htmlContent,
       });
 
+      // Log the result from Resend
+      console.log('Resend API response:', result);
+      console.log('Thank you email sent successfully');
+
       console.log('Thank you email sent successfully');
     } catch (error) {
       console.error('Error sending thank you email:', error);
-      // Don't throw the error, just log it
-      // This way, the payment process will continue even if email sending fails
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        responseData: error.response?.data || 'No response data',
+      });
     }
   }
 
