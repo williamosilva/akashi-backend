@@ -173,6 +173,8 @@ export class PaymentController {
       signature,
     );
 
+    console.log(result);
+
     return { received: true };
   }
 }
