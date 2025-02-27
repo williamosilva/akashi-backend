@@ -211,7 +211,7 @@ export class PaymentService {
 
   async verifySubscription(
     email: string,
-  ): Promise<false | { plan: 'basic' | 'premium' }> {
+  ): Promise<false | { plan: 'basic' | 'premium' | 'admin' }> {
     try {
       // Find the user's most recent subscription
       const subscription = await this.subscriptionModel.findOne(
@@ -236,7 +236,7 @@ export class PaymentService {
 
       // Return the user's current plan
       return {
-        plan: subscription.plan as 'basic' | 'premium',
+        plan: subscription.plan as 'basic' | 'premium' | 'admin',
       };
     } catch (error) {
       console.error('Error verifying subscription:', error);
