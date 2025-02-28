@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import Stripe from 'stripe';
+import { Resend } from 'resend';
 import { Subscription } from './schemas/subscription.schema';
 import { SessionToken } from './schemas/sessionToken.scema';
 import { User } from '../auth/schemas/user.schema';
@@ -11,6 +12,7 @@ import { randomBytes } from 'crypto';
 @Injectable()
 export class PaymentService {
   private stripe: Stripe;
+  private resend: Resend;
 
   @InjectModel(SessionToken.name)
   private sessionTokenModel: Model<SessionToken>;
@@ -33,6 +35,12 @@ export class PaymentService {
         apiVersion: '2025-01-27.acacia',
       },
     );
+
+    const resendApiKey = this.configService.get('RESEND_API_KEY') || '';
+    console.log(
+      `Initializing Resend with API key: ${resendApiKey ? 'Present (hidden)' : 'Missing!'}`,
+    );
+    this.resend = new Resend(resendApiKey);
   }
 
   async createCheckoutSession(
@@ -150,12 +158,94 @@ export class PaymentService {
             processedAt: new Date(),
           },
         );
+        console.log('chamando verificação de email');
+        await this.sendThankYouEmail(
+          session.metadata.email,
+          session.metadata.planType,
+        );
       }
 
       return { received: true };
     } catch (error) {
       console.error('Detailed error in webhook:', error.message);
       throw error;
+    }
+  }
+
+  async sendThankYouEmail(email: string, planType: string) {
+    try {
+      console.log(`Sending thank you email to ${email} for ${planType} plan`);
+
+      // Verify email address format
+      if (!email || !email.includes('@')) {
+        console.error(`Invalid email format: ${email}`);
+        return;
+      }
+
+      const planTitle = planType === 'basic' ? 'Basic Plan' : 'Premium Plan';
+      const planFeatures =
+        planType === 'basic'
+          ? '<li>Basic features</li><li>Standard support</li><li>Limited access</li>'
+          : '<li>All premium features</li><li>Priority support</li><li>Unlimited API access</li><li>Api Integration</li>';
+
+      const htmlContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color:rgb(34, 116, 36);">Thank You for Your Purchase!</h1>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <p>Dear Customer,</p>
+              <p>Thank you for subscribing to our <strong>${planTitle}</strong>. We're excited to have you on board!</p>
+              <p>Your subscription includes:</p>
+              <ul>
+                ${planFeatures}
+              </ul>
+              <p>Your subscription is now active and you can start enjoying all the benefits immediately.</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <p>If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
+            </div>
+            
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666;">
+              <p>Follow us on social media:</p>
+              <div style="margin-bottom: 20px;">
+                <a href="https://www.linkedin.com/in/williamsilva2005" style="text-decoration: none; margin: 0 10px; color: #0077b5;">LinkedIn</a>
+                <a href="http://williamsilva.dev" style="text-decoration: none; margin: 0 10px; color: #2c3e50;">Website</a>
+                <a href="https://github.com/williamosilva" style="text-decoration: none; margin: 0 10px; color: #333333;">GitHub</a>
+              </div>
+              <p>Need help? Contact us at <a href="mailto:support@yourdomain.com" style="color: #3f51b5;">support@yourdomain.com</a></p>
+            </div>
+          </div>
+        `;
+
+      console.log('Email parameters:', {
+        from: 'onboarding@resend.dev',
+        to: email,
+        subject: `Thank You for Subscribing to Our ${planTitle}!`,
+        // Don't log the full HTML content
+      });
+
+      const result = await this.resend.emails.send({
+        from: 'akashibaas@gmail.com', // Consider changing to a verified domain
+        to: email,
+        subject: `Thank You for Subscribing to Our ${planTitle}!`,
+        html: htmlContent,
+      });
+
+      // Log the result from Resend
+      console.log('Resend API response:', result);
+      console.log('Thank you email sent successfully');
+
+      console.log('Thank you email sent successfully');
+    } catch (error) {
+      console.error('Error sending thank you email:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        responseData: error.response?.data || 'No response data',
+      });
     }
   }
 
