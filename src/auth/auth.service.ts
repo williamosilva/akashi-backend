@@ -184,7 +184,7 @@ export class AuthService {
       }
 
       const projectCount = await this.projectModel.countDocuments({
-        user: user.id,
+        user: user._id,
       });
 
       return {
