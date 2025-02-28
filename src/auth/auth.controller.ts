@@ -224,6 +224,8 @@ export class AuthController {
         email: 'user@example.com',
         fullName: 'John Doe',
         photo: 'https://example.com/photo.jpg',
+        plan: 'premium',
+        projectCount: 5,
       },
     },
   })

@@ -12,10 +12,12 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
+import { Project } from 'src/project/schemas/project.schema';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @InjectModel(Project.name) private projectModel: Model<Project>,
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -168,26 +170,30 @@ export class AuthService {
     email: string;
     fullName: string;
     photo: string | undefined;
+    plan: string;
+    projectCount: number;
   }> {
     try {
-      // Decodifica o token usando o JWT_SECRET configurado
       const payload = await this.jwtService.verifyAsync(accessToken, {
         secret: this.configService.get<string>('JWT_SECRET'),
       });
 
-      // Busca o usuário usando o ID que está no token
       const user = await this.userModel.findById(payload.sub);
-
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
-      // Retorna os dados incluindo photo (que pode ser undefined)
+      const projectCount = await this.projectModel.countDocuments({
+        user: user.id,
+      });
+
       return {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
         photo: user.photo,
+        plan: user.plan || 'free',
+        projectCount,
       };
     } catch (error) {
       if (
