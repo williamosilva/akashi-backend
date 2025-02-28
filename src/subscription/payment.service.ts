@@ -215,7 +215,7 @@ export class PaymentService {
                 <a href="http://williamsilva.dev" style="text-decoration: none; margin: 0 10px; color: #2c3e50;">Website</a>
                 <a href="https://github.com/williamosilva" style="text-decoration: none; margin: 0 10px; color: #333333;">GitHub</a>
               </div>
-              <p>Need help? Contact us at <a href="mailto:support@yourdomain.com" style="color: #3f51b5;">support@yourdomain.com</a></p>
+              <p>Need help? Contact us at <a href="mailto:support@yourdomain.com" style="color: #3f51b5;">williamsilva20062005@gmail.com</a></p>
             </div>
           </div>
         `;
