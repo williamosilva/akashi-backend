@@ -253,7 +253,7 @@ export class PaymentService {
     try {
       const sessionToken = await this.sessionTokenModel.findOne({
         token,
-        status: 'pending',
+        status: 'completed',
       });
 
       if (!sessionToken) {
