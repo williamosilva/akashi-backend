@@ -259,7 +259,7 @@ export class PaymentService {
       if (!sessionToken) {
         return {
           valid: false,
-          message: 'Invalid or already processed token',
+          message: 'Invalid or incomplete token',
         };
       }
 
