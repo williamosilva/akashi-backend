@@ -9,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { User, UserSchema } from './schemas/user.schema';
 import { GoogleAuthStrategy, GitHubAuthStrategy } from './social.strategy';
 import { JwtAuthGuard } from './guards/auth.guard';
+import { Project, ProjectsSchema } from 'src/project/schemas/project.schema';
 
 @Module({
   imports: [
@@ -24,7 +25,10 @@ import { JwtAuthGuard } from './guards/auth.guard';
       }),
       inject: [ConfigService],
     }),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: Project.name, schema: ProjectsSchema },
+    ]),
   ],
   controllers: [AuthController],
   providers: [
