@@ -191,31 +191,32 @@ export class PaymentService {
       const htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
             <div style="text-align: center; margin-bottom: 20px;">
-              <h1 style="color:rgb(34, 116, 36);">Thank You for Your Purchase!</h1>
+              <h1 style="color:rgb(34, 116, 36);">Welcome to Akashi!</h1>
+              <p style="color: #666;">Thank you for trusting Akashi – your journey starts now!</p>
             </div>
             
             <div style="margin-bottom: 30px;">
               <p>Dear Customer,</p>
-              <p>Thank you for subscribing to our <strong>${planTitle}</strong>. We're excited to have you on board!</p>
+              <p>Thank you for subscribing to our <strong>${planTitle}</strong>. We're excited to have you on board at <strong>Akashi</strong>!</p>
               <p>Your subscription includes:</p>
               <ul>
                 ${planFeatures}
               </ul>
-              <p>Your subscription is now active and you can start enjoying all the benefits immediately.</p>
+              <p>Your subscription is now active, and you can start enjoying all the benefits immediately.</p>
             </div>
             
             <div style="margin-bottom: 30px;">
-              <p>If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
+              <p>If you have any questions or need assistance, the Akashi support team is always ready to help.</p>
             </div>
             
             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666;">
-              <p>Follow us on social media:</p>
+              <p>Follow Akashi on social media:</p>
               <div style="margin-bottom: 20px;">
                 <a href="https://www.linkedin.com/in/williamsilva2005" style="text-decoration: none; margin: 0 10px; color: #0077b5;">LinkedIn</a>
                 <a href="http://williamsilva.dev" style="text-decoration: none; margin: 0 10px; color: #2c3e50;">Website</a>
                 <a href="https://github.com/williamosilva" style="text-decoration: none; margin: 0 10px; color: #333333;">GitHub</a>
               </div>
-              <p>Need help? Contact us at <a href="mailto:support@yourdomain.com" style="color: #3f51b5;">williamsilva20062005@gmail.com</a></p>
+              <p>Need help? Contact Akashi at <a href="mailto:support@yourdomain.com" style="color: #3f51b5;">williamsilva20062005@gmail.com</a></p>
             </div>
           </div>
         `;
