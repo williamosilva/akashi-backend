@@ -228,7 +228,7 @@ export class PaymentService {
       });
 
       const result = await this.resend.emails.send({
-        from: 'akashibaas@gmail.com', // Consider changing to a verified domain
+        from: 'akashi-backend.onrender.com', // Consider changing to a verified domain
         to: email,
         subject: `Thank You for Subscribing to Our ${planTitle}!`,
         html: htmlContent,
