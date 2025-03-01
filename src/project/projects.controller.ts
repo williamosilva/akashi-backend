@@ -154,7 +154,7 @@ export class ProjectsController {
   async getProjectDataInfo(@Param('projectId') projectId: string) {
     return this.projectsService.getProjectDataInfo(projectId);
   }
-  // Controller
+
   @Post(':projectId/dataentry')
   @ApiOperation({ summary: 'Add new entry to project dataInfo' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })

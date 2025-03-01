@@ -111,7 +111,7 @@ export class PaymentController {
     @Body('planType') planType: 'basic' | 'premium',
     @Request() req,
   ) {
-    const email = req.user?.email || null; // Garante que o email seja null se não existir
+    const email = req.user?.email || null;
 
     const session = await this.paymentService.createCheckoutSession(
       email,
@@ -173,7 +173,7 @@ export class PaymentController {
       signature,
     );
 
-    console.log(result);
+    // console.log(result);
 
     return { received: true };
   }

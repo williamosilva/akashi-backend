@@ -163,7 +163,7 @@ export class ProjectsService {
     const project = await this.validateProject(projectId);
     const dataInfo = project.dataInfo || {};
     const formattedData = {};
-    const nameCounts = new Map<string, number>(); // Rastreia repetições de nomes
+    const nameCounts = new Map<string, number>();
 
     for (const entryId of Object.keys(dataInfo)) {
       let entry = dataInfo[entryId];
@@ -171,17 +171,14 @@ export class ProjectsService {
       const { akashiObjectName, ...rest } = processedEntry;
 
       if (akashiObjectName) {
-        // Conta ocorrências do nome
         const count = (nameCounts.get(akashiObjectName) || 0) + 1;
         nameCounts.set(akashiObjectName, count);
-
-        // Adiciona sufixo numérico apenas para nomes repetidos
         const finalKey =
           count > 1 ? `${akashiObjectName} ${count}` : akashiObjectName;
 
         formattedData[finalKey] = rest;
       } else {
-        console.warn(`Entry ${entryId} is missing akashiObjectName`);
+        // console.warn(`Entry ${entryId} is missing akashiObjectName`);
         formattedData[entryId] = rest;
       }
     }
@@ -192,18 +189,14 @@ export class ProjectsService {
   }
 
   private async deepProcessApiIntegrations(obj: any): Promise<any> {
-    // Processar objetos aninhados recursivamente
     if (typeof obj !== 'object' || obj === null) return obj;
 
-    // Clonar o objeto para evitar mutações
     const clonedObj = { ...obj };
 
-    // Processar primeiro as propriedades mais profundas
     for (const [key, value] of Object.entries(clonedObj)) {
       clonedObj[key] = await this.deepProcessApiIntegrations(value);
     }
 
-    // Processar a própria integração de API se for o caso
     if (this.isApiIntegrationObject(clonedObj)) {
       return this.processSingleApiIntegration(clonedObj);
     }
@@ -260,7 +253,6 @@ export class ProjectsService {
       if (this.findApiIntegrationKey(entry)) {
         const processedEntry = await this.processApiIntegration(entry);
 
-        // Remover o dataReturn de qualquer objeto de integração de API
         if (processedEntry && typeof processedEntry === 'object') {
           for (const [key, value] of Object.entries(processedEntry)) {
             if (value && typeof value === 'object' && 'dataReturn' in value) {
@@ -293,7 +285,6 @@ export class ProjectsService {
         throw new BadRequestException('Invalid project ID');
       }
 
-      // Primeiro verificamos se o projeto existe
       const project = await this.projectModel.findById(projectId);
       if (!project) throw new NotFoundException('Project not found');
 
@@ -302,15 +293,10 @@ export class ProjectsService {
         throw new NotFoundException('Entry not found with provided ID');
       }
 
-      // Verificamos se o objeto está vazio
       const isEmptyObject = Object.keys(updateData).length === 0;
 
-      // Criamos um objeto totalmente novo com apenas o que o cliente enviou
-      // NÃO mesclamos com o existente
       const updatedEntry = isEmptyObject ? {} : { ...updateData };
 
-      // Se houver API configs no objeto original, preservamos apenas as configs,
-      // não o dataReturn
       if (
         dataInfo[entryId].apigatos &&
         this.isApiIntegrationObject(dataInfo[entryId].apigatos)
@@ -321,7 +307,6 @@ export class ProjectsService {
           'x-api-key': xApiKey,
         } = dataInfo[entryId].apigatos;
 
-        // Só preservamos a config da API se não estiver sendo explicitamente substituída
         if (!updateData.apigatos) {
           updatedEntry.apigatos = {
             apiUrl,
@@ -330,7 +315,7 @@ export class ProjectsService {
           };
         }
       }
-      // Simplesmente substituir todo o conteúdo do entryId
+
       const updateObject = {};
       updateObject[`dataInfo.${entryId}`] = updateData || {};
 
@@ -377,14 +362,11 @@ export class ProjectsService {
         );
       }
 
-      // Gerar novo ID para o entry
       const newEntryId = this.generateObjectId();
 
-      // Criar o objeto de atualização para o MongoDB
       const updateObject = {};
       updateObject[`dataInfo.${newEntryId}`] = newEntryData;
 
-      // Usar findByIdAndUpdate para garantir que os dados sejam salvos
       const updatedProject = await this.projectModel.findByIdAndUpdate(
         projectId,
         { $set: updateObject },
@@ -421,19 +403,15 @@ export class ProjectsService {
         throw new BadRequestException('Invalid project ID');
       }
 
-      // Verificar se o projeto existe
       const project = await this.validateProject(projectId);
 
-      // Verificar se o entry existe
       if (!project.dataInfo || !project.dataInfo[entryId]) {
         throw new NotFoundException('Entry not found');
       }
 
-      // Criar o objeto de atualização para o MongoDB (usando $unset para remover o campo)
       const updateObject = {};
-      updateObject[`dataInfo.${entryId}`] = 1; // 1 é apenas um placeholder, o importante é a chave
+      updateObject[`dataInfo.${entryId}`] = 1;
 
-      // Usar findByIdAndUpdate para remover o entry específico
       const updatedProject = await this.projectModel.findByIdAndUpdate(
         projectId,
         { $unset: updateObject },

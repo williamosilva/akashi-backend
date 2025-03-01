@@ -41,7 +41,6 @@ export class AuthService {
 
     const existingUser = await this.userModel.findOne({ email });
 
-    // Verifica se o email já está registrado com outro provider
     if (existingUser) {
       if (existingUser.provider !== 'local') {
         throw new UnauthorizedException(
@@ -78,19 +77,16 @@ export class AuthService {
 
     const user = await this.userModel.findOne({ email });
 
-    // Verifica se o usuário existe
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verifica se o usuário não é local
     if (user.provider !== 'local') {
       throw new UnauthorizedException(
         `This account is registered via ${user.provider}. Log in using ${user.provider}.`,
       );
     }
 
-    // Verifica se a senha está definida
     if (!user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -142,16 +138,14 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string) {
     try {
-      // Verifica se o refreshToken é válido
       const payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      // Gera um novo accessToken usando os dados extraídos do refreshToken
       const newAccessToken = await this.jwtService.signAsync(
         {
-          sub: payload.sub, // ID do usuário
-          email: payload.email, // Email do usuário
+          sub: payload.sub,
+          email: payload.email,
         },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
@@ -207,31 +201,28 @@ export class AuthService {
   }
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
-    console.log('Profile:', profile);
+    // console.log('Profile:', profile);
 
-    console.log('Dados do Perfil:', {
-      email: profile.email,
-      displayName: profile.displayName,
-      photo: profile.photo,
-    });
+    // console.log('Dados do Perfil:', {
+    //   email: profile.email,
+    //   displayName: profile.displayName,
+    //   photo: profile.photo,
+    // });
 
     try {
       const email = profile.email || `${profile.id}@${provider}.social`;
 
-      // Primeiro, procura por qualquer usuário com este email, independente do provider
       const existingUser = await this.userModel.findOne({
         email: email,
       });
 
       if (existingUser) {
-        // Se encontrou um usuário com este email, verifica se o provider é diferente
         if (existingUser.provider !== provider) {
           throw new ConflictException(
             `This email is already associated with an account ${existingUser.provider}. Please log in using ${existingUser.provider}.`,
           );
         }
 
-        // Se chegou aqui, o provider é o mesmo, então atualiza os dados
         existingUser.fullName = profile.displayName;
         existingUser.providerId = profile.id;
         if (profile.photo) existingUser.photo = profile.photo;
@@ -250,7 +241,6 @@ export class AuthService {
         };
       }
 
-      // Se não encontrou usuário, cria um novo
       const newUser = await this.userModel.create({
         email,
         fullName: profile.displayName,
