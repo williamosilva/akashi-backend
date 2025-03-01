@@ -7,9 +7,13 @@ import { JwtAuthGuard } from './auth/guards/auth.guard';
 import { validate } from './config/env.validation';
 import { ProjectsModule } from './project/projects.module';
 import { PaymentModule } from './subscription/payment.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { PingService } from './health/ping.service';
+import { HealthController } from './health/ping.controller';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       validate,
       isGlobal: true,
@@ -25,11 +29,14 @@ import { PaymentModule } from './subscription/payment.module';
     ProjectsModule,
     PaymentModule,
   ],
+  controllers: [HealthController],
+
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    PingService,
   ],
 })
 export class AppModule {}

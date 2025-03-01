@@ -78,25 +78,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
-  // Configuração de segurança global para todos os endpoints no Swagger
-  const securitySchemes = {
-    'access-token': {
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
-    },
-    'refresh-token': {
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
-    },
-    'secret-key': {
-      type: 'apiKey',
-      name: 'x-secret-key',
-      in: 'header',
-    },
-  };
-
   // Aplicar requisitos de segurança para todas as rotas
   document.security = [
     {
