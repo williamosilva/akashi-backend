@@ -10,7 +10,12 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: ['http://localhost:3000', process.env.FRONTEND_URL],
+    origin: [
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,
+      'https://www.akashi-baas.com.br',
+      'https://akashi-frontend-k24te3nfz-williamsilvaoliveiraas-projects.vercel.app',
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
