@@ -56,8 +56,8 @@ export class PaymentService {
         {
           price:
             planType === 'basic'
-              ? 'price_1QqJktImbnhk3Vamex5pRZla'
-              : 'price_1QqJkYImbnhk3VamParAbIol',
+              ? 'price_1QxzFWImbnhk3VamXm9KLmPA'
+              : 'price_1QpwFvImbnhk3VamJnehrwNO',
           quantity: 1,
         },
       ],
