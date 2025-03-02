@@ -59,28 +59,26 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
       // 🔄 Tenta renovar o token usando o Refresh Token
       try {
-        const refreshToken = this.extractToken(request, 'Refresh-Token');
-        if (!refreshToken) {
-          throw new UnauthorizedException('Missing refresh token');
-        }
+        const accessToken = this.extractToken(request, 'Authorization');
+        if (!accessToken)
+          throw new UnauthorizedException('Missing access token');
 
-        // 🛠️ Valida o Refresh Token
-        const refreshPayload = await this.jwtService.verifyAsync(refreshToken, {
-          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        const payload = await this.jwtService.verifyAsync(accessToken, {
+          secret: this.configService.get<string>('JWT_SECRET'),
         });
 
-        // 🔄 Gera um novo Access Token
-        const newAccessToken =
-          await this.authService.refreshTokens(refreshToken);
-
-        // 📌 Atualiza os Headers para o Frontend pegar o novo Token
-        response.setHeader('New-Access-Token', newAccessToken);
-
-        // ✅ Atualiza o usuário na Request
-        request.user = refreshPayload;
+        request.user = payload;
         return true;
-      } catch (refreshError) {
-        throw new UnauthorizedException('Invalid or expired refresh token');
+      } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+          throw new UnauthorizedException('Access token expired');
+        }
+
+        if (error.name === 'JsonWebTokenError') {
+          throw new UnauthorizedException('Invalid access token');
+        }
+
+        throw new UnauthorizedException('Authentication failed');
       }
     }
   }
@@ -92,7 +90,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const parts = token.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       throw new UnauthorizedException(
-        `Invalid ${headerName} format. Use: 'Bearer <token>'`,
+        `Invalid ${headerName} header format. Use: 'Bearer <token>'`,
       );
     }
 
