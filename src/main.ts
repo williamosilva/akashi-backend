@@ -10,7 +10,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: '*', // Permite qualquer origem acessar
+    origin: [process.env.FRONTEND_URL],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -19,7 +19,7 @@ async function bootstrap() {
       'x-secret-key',
       'Refresh-Token',
     ],
-    credentials: true, // Atenção: pode causar problemas de segurança se não for necessário
+    credentials: true,
   });
 
   app.use(
