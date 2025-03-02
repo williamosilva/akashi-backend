@@ -3,11 +3,16 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as express from 'express';
+import { AuthExceptionFilter } from './auth/auth.exception.filter';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
   });
+
+  app.useGlobalFilters(new AuthExceptionFilter());
+  app.useGlobalPipes(new ValidationPipe());
 
   app.enableCors({
     origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [],
