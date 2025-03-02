@@ -62,7 +62,7 @@ export class PaymentService {
         },
       ],
       success_url: `${process.env.FRONTEND_URL}/success/${sessionToken}`,
-      cancel_url: `${process.env.FRONTEND_URL}/cancel/${sessionToken}`,
+      cancel_url: `${process.env.FRONTEND_URL}/`,
       metadata: {
         email: email || '',
         planType,
