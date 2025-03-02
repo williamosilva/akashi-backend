@@ -9,14 +9,8 @@ async function bootstrap() {
     rawBody: true,
   });
 
-  const allowedOrigins = ['http://localhost:3000'];
-
-  if (process.env.FRONTEND_URL) {
-    allowedOrigins.push(process.env.FRONTEND_URL);
-  }
-
   app.enableCors({
-    origin: allowedOrigins,
+    origin: ['http://localhost:3000', process.env.FRONTEND_URL],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -27,6 +21,7 @@ async function bootstrap() {
     ],
     credentials: true,
   });
+
   app.use(
     express.json({
       verify: (req: any, res, buf) => {
