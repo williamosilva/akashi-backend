@@ -10,12 +10,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      process.env.FRONTEND_URL,
-      'https://www.akashi-baas.com.br',
-      'https://akashi-frontend-k24te3nfz-williamsilvaoliveiraas-projects.vercel.app',
-    ],
+    origin: '*', // Permite qualquer origem acessar
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -24,7 +19,7 @@ async function bootstrap() {
       'x-secret-key',
       'Refresh-Token',
     ],
-    credentials: true,
+    credentials: true, // Atenção: pode causar problemas de segurança se não for necessário
   });
 
   app.use(
