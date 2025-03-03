@@ -202,7 +202,8 @@ export class AuthService {
 
         existingUser.fullName = profile.displayName;
         existingUser.providerId = profile.id;
-        if (profile.photo) existingUser.photo = profile.photo;
+        if (profile.photos?.[0]?.value)
+          existingUser.photo = profile.photos[0].value;
         await existingUser.save();
 
         const tokens = await this.generateTokens(
@@ -223,7 +224,7 @@ export class AuthService {
         fullName: profile.displayName,
         provider,
         providerId: profile.id,
-        photo: profile.photo,
+        photo: profile.photos?.[0]?.value,
         plan: 'free',
       });
 

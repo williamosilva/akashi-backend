@@ -8,8 +8,8 @@ import { validate } from './config/env.validation';
 import { ProjectsModule } from './modules/project/projects.module';
 import { PaymentModule } from 'src/modules/payment/payment.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { PingService } from './health/ping.service';
-import { HealthController } from './health/ping.controller';
+import { PingService } from './modules/health/ping.service';
+import { HealthController } from 'src/modules/health/ping.controller';
 
 @Module({
   imports: [
