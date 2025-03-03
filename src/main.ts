@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as express from 'express';
 import { AuthExceptionFilter } from './common/filters/auth.exception.filter';
+import * as basicAuth from 'express-basic-auth';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -37,6 +38,14 @@ async function bootstrap() {
       verify: (req: any, res, buf) => {
         req.rawBody = buf;
       },
+    }),
+  );
+
+  app.use(
+    '/api',
+    basicAuth({
+      users: { admin: process.env.SWAGGER_PASSWORD || '' },
+      challenge: true,
     }),
   );
 
