@@ -176,11 +176,8 @@ export class AuthController {
       },
     },
   })
-  async register(
-    @Body() registerDto: RegisterDto,
-    @Headers('x-secret-key') apiKey: string,
-  ) {
-    return this.authService.register(registerDto, apiKey);
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
   @Post('refresh')
@@ -285,10 +282,7 @@ export class AuthController {
       },
     },
   })
-  async login(
-    @Body() loginDto: LoginDto,
-    @Headers('x-secret-key') apiKey: string,
-  ) {
-    return this.authService.login(loginDto, apiKey);
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 }
