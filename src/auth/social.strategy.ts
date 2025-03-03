@@ -3,7 +3,6 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AuthService } from './auth.service';
 
 interface GitHubProfile {
   id: string;
@@ -57,7 +56,6 @@ export class GoogleAuthStrategy extends PassportStrategy(
   }
 }
 
-// social.strategy.ts (GitHub Strategy)
 @Injectable()
 export class GitHubAuthStrategy extends PassportStrategy(
   GitHubStrategy,
@@ -79,7 +77,6 @@ export class GitHubAuthStrategy extends PassportStrategy(
   ) {
     let emails = profile.emails || [];
 
-    // Passo 1: Buscar emails via API se necessário
     if (!emails.length || !emails.some((e) => e.verified)) {
       try {
         const emailResponse = await fetch(
@@ -92,12 +89,11 @@ export class GitHubAuthStrategy extends PassportStrategy(
           primary: boolean;
         }> = await emailResponse.json();
 
-        // Mapear para o formato { value, verified, primary }
         emails = emailData
           .filter((email) => email.verified)
           .sort((a, b) => (a.primary === b.primary ? 0 : a.primary ? -1 : 1))
           .map((email) => ({
-            value: email.email, // ← Corrigir mapeamento aqui
+            value: email.email,
             verified: email.verified,
             primary: email.primary,
           }));

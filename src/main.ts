@@ -52,7 +52,7 @@ async function bootstrap() {
       'williamsilva20062005@gmail.com',
     )
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
-    // Adiciona configurações de autenticação
+
     .addBearerAuth(
       {
         type: 'http',
@@ -80,7 +80,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
-  // Aplicar requisitos de segurança para todas as rotas
   document.security = [
     {
       'access-token': [],
@@ -100,7 +99,6 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  // console.log(`🚀 Server running on http://localhost:${port}`);
 }
 
 bootstrap();
