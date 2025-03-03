@@ -76,59 +76,148 @@ export class PaymentService {
   }
 
   async handleWebhook(rawBody: string, signature: string) {
+    console.log('[DEBUG] Iniciando handleWebhook');
+    console.log('[DEBUG] Parâmetros recebidos:', {
+      rawBodyLength: rawBody?.length || 0,
+      signature: signature ? 'Presente' : 'Ausente',
+    });
+
     try {
+      console.log('[DEBUG] Obtendo chave secreta do webhook');
       const webhookSecret = this.configService.get<string>(
         'STRIPE_WEBHOOK_SECRET',
       );
+
       if (!webhookSecret) {
+        console.error('[ERRO] Chave secreta do webhook não configurada');
         throw new Error('Chave secreta do webhook não configurada');
       }
+      console.log('[DEBUG] Chave secreta do webhook obtida com sucesso');
 
+      console.log('[DEBUG] Construindo evento do webhook');
       const event = this.stripeService.constructWebhookEvent(
         rawBody,
         signature,
         webhookSecret,
       );
+      console.log('[DEBUG] Evento construído com sucesso:', {
+        eventId: event.id,
+        eventType: event.type,
+        apiVersion: event.api_version,
+      });
 
+      console.log('[DEBUG] Processando evento do webhook');
       const session = await this.stripeService.handleStripeWebhookEvent(event);
+      console.log('[DEBUG] Resultado do processamento:', {
+        sessionExists: !!session,
+        sessionId: session?.id || 'N/A',
+      });
 
       if (session) {
+        console.log('[DEBUG] Iniciando processamento da sessão completada');
         await this.processCompletedSession(session);
+        console.log('[DEBUG] Processamento da sessão completado com sucesso');
+      } else {
+        console.log('[DEBUG] Nenhuma sessão para processar');
       }
 
+      console.log('[DEBUG] Webhook processado com sucesso');
       return { received: true };
     } catch (error) {
-      console.error('Erro no processamento do webhook:', error.message);
+      console.error('[ERRO] Erro no processamento do webhook:', error.message);
+      console.error('[ERRO] Stack trace:', error.stack);
+      console.error('[ERRO] Detalhes adicionais:', {
+        name: error.name,
+        code: error.code,
+        type: error.type,
+        statusCode: error.statusCode,
+        params: error.params,
+      });
+
       throw error;
     }
   }
-
   private async processCompletedSession(session: any) {
-    if (!this.validateSessionMetadata(session.metadata)) {
-      throw new Error('Metadados da sessão incompletos');
+    console.log('[DEBUG] Iniciando processCompletedSession');
+    console.log('[DEBUG] Dados da sessão recebidos:', {
+      sessionId: session?.id || 'N/A',
+      customerId: session?.customer || 'N/A',
+      subscriptionId: session?.subscription || 'N/A',
+      hasMetadata: !!session?.metadata,
+    });
+
+    try {
+      console.log('[DEBUG] Validando metadados da sessão');
+      if (!this.validateSessionMetadata(session.metadata)) {
+        console.error(
+          '[ERRO] Metadados da sessão incompletos:',
+          session.metadata,
+        );
+        throw new Error('Metadados da sessão incompletos');
+      }
+      console.log('[DEBUG] Metadados da sessão válidos:', {
+        email: session.metadata.email,
+        planType: session.metadata.planType,
+        sessionToken: session.metadata.sessionToken ? 'Presente' : 'Ausente',
+      });
+
+      console.log('[DEBUG] Validando token da sessão');
+      const sessionToken = await this.validateSessionToken(
+        session.metadata.sessionToken,
+      );
+      console.log('[DEBUG] Token da sessão validado com sucesso:', {
+        tokenId: sessionToken?.id || 'N/A',
+        valid: !!sessionToken,
+      });
+
+      console.log('[DEBUG] Criando assinatura');
+      await this.createSubscription(
+        session.metadata.email,
+        session.metadata.planType,
+        session.subscription,
+      );
+      console.log('[DEBUG] Assinatura criada com sucesso para:', {
+        email: session.metadata.email,
+        planType: session.metadata.planType,
+        subscriptionId: session.subscription,
+      });
+
+      console.log('[DEBUG] Atualizando plano do usuário');
+      await this.updateUserPlan(
+        session.metadata.email,
+        session.metadata.planType,
+      );
+      console.log('[DEBUG] Plano do usuário atualizado com sucesso');
+
+      console.log('[DEBUG] Atualizando status do token da sessão');
+      await this.updateSessionTokenStatus(session.metadata.sessionToken);
+      console.log('[DEBUG] Status do token da sessão atualizado com sucesso');
+
+      console.log('[DEBUG] Enviando email de agradecimento');
+      await this.emailService.sendThankYouEmail(
+        session.metadata.email,
+        session.metadata.planType,
+      );
+      console.log('[DEBUG] Email de agradecimento enviado com sucesso');
+
+      console.log('[DEBUG] Processamento da sessão concluído com sucesso');
+    } catch (error) {
+      console.error(
+        '[ERRO] Falha no processamento da sessão completada:',
+        error.message,
+      );
+      console.error('[ERRO] Stack trace:', error.stack);
+      console.error('[ERRO] Detalhes da sessão com erro:', {
+        sessionId: session?.id || 'N/A',
+        metadata: session?.metadata || 'N/A',
+        email: session?.metadata?.email || 'N/A',
+        planType: session?.metadata?.planType || 'N/A',
+        step: 'Verificar logs anteriores para identificar a etapa específica',
+      });
+
+      // Re-lançar o erro para que seja tratado pelo chamador
+      throw error;
     }
-
-    const sessionToken = await this.validateSessionToken(
-      session.metadata.sessionToken,
-    );
-
-    await this.createSubscription(
-      session.metadata.email,
-      session.metadata.planType,
-      session.subscription,
-    );
-
-    await this.updateUserPlan(
-      session.metadata.email,
-      session.metadata.planType,
-    );
-
-    await this.updateSessionTokenStatus(session.metadata.sessionToken);
-
-    await this.emailService.sendThankYouEmail(
-      session.metadata.email,
-      session.metadata.planType,
-    );
   }
 
   private validateSessionMetadata(metadata: any): boolean {
