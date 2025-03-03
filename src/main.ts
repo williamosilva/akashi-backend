@@ -21,7 +21,12 @@ async function bootstrap() {
       'Content-Type',
       'Authorization',
       'stripe-signature',
-      'x-secret-key',
+      'Refresh-Token',
+    ],
+    exposedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'stripe-signature',
       'Refresh-Token',
     ],
     credentials: true,
@@ -70,15 +75,7 @@ async function bootstrap() {
       },
       'refresh-token',
     )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'x-secret-key',
-        in: 'header',
-        description: 'Enter secret key',
-      },
-      'secret-key',
-    )
+
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
