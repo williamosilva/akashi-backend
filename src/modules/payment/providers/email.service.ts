@@ -57,14 +57,12 @@ export class EmailService {
         </div>
       `;
 
-      // Adicione aqui o código de envio de e-mail se necessário
-      // Exemplo:
-      // await this.resend.emails.send({
-      //   from: 'your-email@domain.com',
-      //   to: email,
-      //   subject: `Thank you for subscribing to ${planTitle}`,
-      //   html: htmlContent
-      // });
+      await this.resend.emails.send({
+        from: 'your-email@domain.com',
+        to: email,
+        subject: `Thank you for subscribing to ${planTitle}`,
+        html: htmlContent,
+      });
     } catch (error) {
       console.error('Error sending thank you email:', error);
       console.error('Error details:', {
