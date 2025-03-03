@@ -158,6 +158,8 @@ export class AuthService {
       });
 
       const user = await this.userModel.findById(payload.sub);
+
+      // Esta exceção precisa ser propagada, não capturada pelo catch abaixo
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
@@ -175,6 +177,10 @@ export class AuthService {
         projectCount,
       };
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
       if (
         error?.name === 'JsonWebTokenError' ||
         error?.name === 'TokenExpiredError'
@@ -202,8 +208,7 @@ export class AuthService {
 
         existingUser.fullName = profile.displayName;
         existingUser.providerId = profile.id;
-        if (profile.photos?.[0]?.value)
-          existingUser.photo = profile.photos[0].value;
+        if (profile.photo) existingUser.photo = profile.photo;
         await existingUser.save();
 
         const tokens = await this.generateTokens(
@@ -224,7 +229,7 @@ export class AuthService {
         fullName: profile.displayName,
         provider,
         providerId: profile.id,
-        photo: profile.photos?.[0]?.value,
+        photo: profile.photo,
         plan: 'free',
       });
 
