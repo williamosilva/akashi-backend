@@ -13,7 +13,6 @@ export class AuthExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const errorMessage = exception.message;
 
-    // Mapeamento de mensagens para códigos específicos
     const tokenErrors = [
       'access token',
       'refresh token',

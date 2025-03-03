@@ -18,10 +18,10 @@ import {
   ApiBearerAuth,
   ApiSecurity,
 } from '@nestjs/swagger';
-import { ProjectsService } from './projects.service';
-import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
-import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { ProjectsService } from 'src/modules/project/projects.service';
+import { CreateProjectDto } from './dto/project.dto';
+import { JwtAuthGuard } from 'src/common/guards/auth.guard';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Projects')
 @Controller('projects')

@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Health')
 @Controller('health')

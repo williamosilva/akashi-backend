@@ -6,7 +6,7 @@ import {
   ApiHeader,
   ApiProperty,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/auth.guard';
 import { PaymentService } from './payment.service';
 import {
   Body,
@@ -19,7 +19,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 class CheckoutDto {
   @ApiProperty({

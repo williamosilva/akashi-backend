@@ -6,7 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
-import { AuthService } from '../auth.service';
+import { AuthService } from '../../modules/auth/auth.service';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 @Injectable()

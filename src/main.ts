@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as express from 'express';
-import { AuthExceptionFilter } from './auth/auth.exception.filter';
+import { AuthExceptionFilter } from './common/filters/auth.exception.filter';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {

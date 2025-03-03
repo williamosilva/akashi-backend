@@ -17,12 +17,12 @@ import {
   ApiBody,
   ApiHeader,
 } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { Public } from './decorators/public.decorator';
+import { AuthService } from 'src/modules/auth/auth.service';
+import { RegisterDto } from 'src/modules/auth/dto/register.dto';
+import { LoginDto } from 'src/modules/auth/dto/login.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtAuthGuard } from './guards/auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')

@@ -12,7 +12,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { Project } from 'src/project/schemas/project.schema';
+import { Project } from 'src/modules/project/schemas/project.schema';
 
 @Injectable()
 export class AuthService {
@@ -22,21 +22,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
-
-  // private validateApiKey(providedSecret: string | undefined): void {
-  //   const expectedSecret = this.configService.get<string>('SECRET_KEY');
-
-  //   if (!providedSecret) {
-  //     throw new UnauthorizedException('Secret key is missing in headers');
-  //   }
-
-  //   if (providedSecret !== expectedSecret) {
-  //     throw new UnauthorizedException('Provided secret key is invalid');
-  //   }
-  // }
-
   async register(registerDto: RegisterDto) {
-    // this.validateApiKey(apiKey);
     const { email, password, fullName } = registerDto;
 
     const existingUser = await this.userModel.findOne({ email });
@@ -72,7 +58,6 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    // this.validateApiKey(apiKey);
     const { email, password } = loginDto;
 
     const user = await this.userModel.findOne({ email });
@@ -201,14 +186,6 @@ export class AuthService {
   }
 
   async handleSocialLogin(profile: any, provider: 'google' | 'github') {
-    // console.log('Profile:', profile);
-
-    // console.log('Dados do Perfil:', {
-    //   email: profile.email,
-    //   displayName: profile.displayName,
-    //   photo: profile.photo,
-    // });
-
     try {
       const email = profile.email || `${profile.id}@${provider}.social`;
 

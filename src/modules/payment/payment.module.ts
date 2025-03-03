@@ -4,12 +4,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import {
   Subscription,
   SubscriptionSchema,
-} from './schemas/subscription.schema';
+} from 'src/modules/payment/schemas/subscription.schema';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
-import { AuthModule } from '../auth/auth.module';
-import { SessionToken, SessionTokenSchema } from './schemas/sessionToken.scema';
-import { User, UserSchema } from '../auth/schemas/user.schema';
+import { AuthModule } from 'src/modules/auth/auth.module';
+import {
+  SessionToken,
+  SessionTokenSchema,
+} from 'src/modules/payment/schemas/sessionToken.schema';
+import { User, UserSchema } from 'src/modules/auth/schemas/user.schema';
+import { EmailService } from './providers/email.service';
+import { StripeService } from './providers/stripe.service';
 
 @Module({
   imports: [
@@ -22,6 +27,6 @@ import { User, UserSchema } from '../auth/schemas/user.schema';
     ]),
   ],
   controllers: [PaymentController],
-  providers: [PaymentService],
+  providers: [PaymentService, EmailService, StripeService],
 })
 export class PaymentModule {}
