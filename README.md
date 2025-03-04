@@ -90,7 +90,7 @@ This project is for educational purposes only. It is not intended for production
 
 ## 🔗 Resources
 - **Metadata Analysis**: [https://www.akashi-baas.com.br/](https://www.akashi-baas.com.br/)
-- **Related Project**: [Akashi Frontend](https://github.com/username/akashi-frontend)
+- **Related Project**: [Akashi Frontend](https://github.com/williamosilva/saas-akashi)
 
 ---
 <div align="center">
