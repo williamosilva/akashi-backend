@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import * as express from 'express';
 import { AuthExceptionFilter } from './common/filters/auth.exception.filter';
 import * as basicAuth from 'express-basic-auth';
+import * as cors from 'cors';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -12,10 +13,7 @@ async function bootstrap() {
     rawBody: true,
   });
 
-  app.useGlobalFilters(new AuthExceptionFilter());
-  app.useGlobalPipes(new ValidationPipe());
-
-  app.enableCors({
+  const globalCorsOptions = {
     origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -31,7 +29,46 @@ async function bootstrap() {
       'Refresh-Token',
     ],
     credentials: true,
-  });
+  };
+
+  app.use(
+    cors((req: cors.CorsRequest, callback) => {
+      const isSpecialRoute = (req as any).path.match(
+        /\/projects\/[^/]+\/formatted$/,
+      );
+
+      if (isSpecialRoute) {
+        callback(null, {
+          origin: '*',
+          methods: ['GET', 'OPTIONS'],
+          allowedHeaders: ['Content-Type', 'Authorization'],
+        });
+      } else {
+        callback(null, globalCorsOptions);
+      }
+    }),
+  );
+
+  app.useGlobalFilters(new AuthExceptionFilter());
+  app.useGlobalPipes(new ValidationPipe());
+
+  // app.enableCors({
+  //   origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [],
+  //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  //   allowedHeaders: [
+  //     'Content-Type',
+  //     'Authorization',
+  //     'stripe-signature',
+  //     'Refresh-Token',
+  //   ],
+  //   exposedHeaders: [
+  //     'Content-Type',
+  //     'Authorization',
+  //     'stripe-signature',
+  //     'Refresh-Token',
+  //   ],
+  //   credentials: true,
+  // });
 
   app.use(
     express.json({
