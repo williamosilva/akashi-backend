@@ -1,99 +1,98 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+<div align="center">
+  <img src="https://i.imgur.com/7iwweOW.png" alt="Akashi Logo" width="180" height="180" />
+  
+  # Akashi Backend
+  
+  <p><i>A modern SaaS backend built with NestJS</i></p>
+  
+  <br>
+  
+  <div>
+    <img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  </div>
+  
+  <div style="margin-top: 10px;">
+    <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+    <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT" />
+    <img src="https://img.shields.io/badge/Stripe-008CDD?style=for-the-badge&logo=stripe&logoColor=white" alt="Stripe" />
+  </div>
+  
+  <br>
+</div>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 📋 About
+This project is a backend application for a SaaS product built with NestJS. It has been created for **educational purposes** and made public to share knowledge and demonstrate best practices in building modern Node.js applications.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🧩 What is Akashi?
+Akashi is a ready-to-use backend solution designed specifically for frontend developers who need a flexible API system without building a backend from scratch. This backend provides a comprehensive set of endpoints allowing developers to retrieve, store, and manipulate data with simple API calls. With Akashi, frontend developers can focus on creating engaging user interfaces while relying on a robust backend infrastructure that handles authentication, data storage, and third-party integrations. Akashi serves as a bridge between frontend applications and data management, enabling the creation of full-stack applications without extensive backend knowledge.
 
-## Description
+## 🚀 Features
+- **Authentication & Authorization**: Support for JWT, Google OAuth, and GitHub OAuth
+- **Payment Integration**: Stripe integration for subscription management
+- **Data Storage**: MongoDB integration with Mongoose
+- **Email Services**: Email functionality via Resend API
+- **API Documentation**: Swagger integration
+- **Scheduled Tasks**: Task scheduling with @nestjs/schedule
+- **Security**: Password hashing with bcrypt
+- **Data Validation**: Input validation with class-validator
+- **Configuration Management**: Environment-based configuration
+- **External API Integration**: Support for connecting and utilizing external API services
+- **Visual Data Representation**: Tools for transforming data into visualization-ready formats
+- **Customizable Endpoints**: Flexible API structure that can be tailored to frontend needs
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🛠️ Tech Stack
+- **Framework**: [NestJS](https://nestjs.com/) (v11)
+- **Database**: [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
+- **Authentication**:
+  - [Passport](http://www.passportjs.org/)
+  - [JWT](https://jwt.io/)
+  - Google OAuth
+  - GitHub OAuth
+- **Payment**: [Stripe](https://stripe.com/)
+- **Email**: [Resend](https://resend.com/)
+- **API Documentation**: [Swagger](https://swagger.io/)
+- **Testing**: [Jest](https://jestjs.io/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
 
-## Project setup
+## 🌐 API Services
+Akashi Backend provides a comprehensive set of API endpoints that enable frontend developers to:
+- Authenticate users through multiple methods
+- Store and retrieve user-specific data
+- Process payments and manage subscriptions
+- Send transactional emails
+- Connect with third-party services
+- Schedule automated tasks
+- Transform raw data into visualization-ready formats
 
-```bash
-$ npm install
-```
+## 🧪 Getting Started
+Check out our documentation to learn how to connect your frontend application to Akashi Backend. The API is designed to be intuitive and developer-friendly, with comprehensive Swagger documentation to help you understand available endpoints and data structures.
 
-## Compile and run the project
+## 🔒 License
+### Study Showcase License
+Copyright © 2025
+This codebase is provided solely for **educational and showcase purposes**. The code is made available publicly to demonstrate the author's learning process and implementation skills.
 
-```bash
-# development
-$ npm run start
+**Permissions**:
+- You may view and study this code
+- You may reference small portions of this code with proper attribution
 
-# watch mode
-$ npm run start:dev
+**Restrictions**:
+- You may NOT copy, distribute, or use the complete codebase or substantial portions of it in any commercial or personal projects
+- You may NOT use any part of this codebase in proprietary software
+- You may NOT modify or create derivative works for redistribution
 
-# production mode
-$ npm run start:prod
-```
+All rights reserved. This code is shared for demonstration and educational review only.
 
-## Run tests
+## ⚠️ Disclaimer
+This project is for educational purposes only. It is not intended for production use without proper review and security considerations.
 
-```bash
-# unit tests
-$ npm run test
+## 🔗 Resources
+- **Metadata Analysis**: [https://www.akashi-baas.com.br/](https://www.akashi-baas.com.br/)
+- **Related Project**: [Akashi Frontend](https://github.com/williamosilva/saas-akashi)
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---
+<div align="center">
+  <p>Made with ❤️ for learning by Wiliam Silva</p>
+</div>
